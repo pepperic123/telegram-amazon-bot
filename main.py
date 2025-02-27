@@ -144,10 +144,18 @@ def run_scheduler():
         schedule.run_pending()
         time.sleep(60)
 
+import os
+from flask import Flask
+
 app = Flask(__name__)
+
 @app.route('/')
 def home():
     return "🤖 Bot attivo"
+
+@app.route('/ping')
+def ping():
+    return "Bot is running!", 200
 
 def run_flask():
     port = int(os.environ.get("PORT", 8000))
