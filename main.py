@@ -1,15 +1,10 @@
 import requests
-import hashlib
-import hmac
-import base64
-import time
-import urllib.parse
+import json
+import logging
 from flask import Flask
 from telegram import Bot
 from telegram.constants import ParseMode
-from bs4 import BeautifulSoup
-import os
-import logging
+from aws_requests_auth.aws_auth import AWSRequestsAuth
 import asyncio
 
 # Configura il logging
@@ -29,59 +24,59 @@ TELEGRAM_CHAT_ID = "-1002290458283"
 app = Flask(__name__)
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 
-def generate_amazon_signed_url():
+def generate_amazon_paapi5_request():
     """
-    Genera una URL firmata per effettuare una richiesta ItemSearch alla PA‑API.
+    Genera il corpo della richiesta per la PA-API 5.0.
     """
-    endpoint = "webservices.amazon.it"
-    uri = "/onca/xml"
     params = {
-        "Service": "AWSECommerceService",
-        "Operation": "ItemSearch",
-        "AWSAccessKeyId": AWS_ACCESS_KEY,
-        "AssociateTag": ASSOCIATE_TAG,
-        "SearchIndex": "All",
-        "ResponseGroup": "ItemAttributes,Offers",
         "Keywords": "offerte",
-        "Timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        "SearchIndex": "All",
+        "ItemCount": 5,
+        "Resources": ["ItemInfo.Title", "Offers.Listings.Price"],
+        "PartnerTag": ASSOCIATE_TAG,
+        "PartnerType": "Associates"
     }
-    sorted_params = sorted(params.items())
-    query_string = urllib.parse.urlencode(sorted_params)
-    string_to_sign = f"GET\n{endpoint}\n{uri}\n{query_string}"
-    signature = hmac.new(AWS_SECRET_KEY.encode('utf-8'),
-                         string_to_sign.encode('utf-8'),
-                         hashlib.sha256).digest()
-    signature = base64.b64encode(signature).decode()
-    signed_url = f"https://{endpoint}{uri}?{query_string}&Signature={urllib.parse.quote(signature)}"
-    logger.info(f"Generated Signed URL: {signed_url}")
-    return signed_url
+    return json.dumps(params)
 
 def get_amazon_offers():
     """
-    Effettua una richiesta alla PA‑API e restituisce un testo con le offerte trovate.
+    Effettua una richiesta alla PA-API 5.0 e restituisce un testo con le offerte trovate.
     """
-    url = generate_amazon_signed_url()
-    response = requests.get(url)
-    logger.info(f"Amazon API Response: {response.content}")
+    endpoint = "webservices.amazon.eu"
+    url = f"https://{endpoint}/paapi5/searchitems"
+    params = generate_amazon_paapi5_request()
+    auth = AWSRequestsAuth(
+        aws_access_key=AWS_ACCESS_KEY,
+        aws_secret_access_key=AWS_SECRET_KEY,
+        aws_host=endpoint,
+        aws_region="eu-west-1",
+        aws_service="ProductAdvertisingAPI"
+    )
+    headers = {
+        "Content-Type": "application/json",
+        "X-Amz-Target": "com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems"
+    }
+    response = requests.post(url, data=params, headers=headers, auth=auth)
     if response.status_code == 200:
-        soup = BeautifulSoup(response.content, "xml")
-        items = soup.find_all("Item")
-        if not items:
-            return "Nessuna offerta trovata."
-        offers_text = ""
-        for item in items[:5]:
-            title_tag = item.find("Title")
-            price_tag = item.find("FormattedPrice")
-            detail_url_tag = item.find("DetailPageURL")
-            if title_tag and price_tag and detail_url_tag:
-                title = title_tag.get_text().strip()
-                price = price_tag.get_text().strip()
-                detail_url = detail_url_tag.get_text().strip()
-                offers_text += f"🔥 *{title}*\n💰 *{price}*\n🔗 [Acquista ora]({detail_url})\n\n"
-        return offers_text if offers_text else "Nessuna offerta trovata."
+        return parse_amazon_response(response.json())
     else:
         logger.error(f"Errore nella richiesta: {response.status_code}")
         return f"Errore nella richiesta: {response.status_code}"
+
+def parse_amazon_response(response):
+    """
+    Parsa la risposta della PA-API 5.0 e restituisce un testo formattato.
+    """
+    items = response.get("SearchResult", {}).get("Items", [])
+    if not items:
+        return "Nessuna offerta trovata."
+    offers_text = ""
+    for item in items[:5]:
+        title = item.get("ItemInfo", {}).get("Title", {}).get("DisplayValue", "N/A")
+        price = item.get("Offers", {}).get("Listings", [{}])[0].get("Price", {}).get("DisplayAmount", "N/A")
+        detail_url = item.get("DetailPageURL", "N/A")
+        offers_text += f"🔥 *{title}*\n💰 *{price}*\n🔗 [Acquista ora]({detail_url})\n\n"
+    return offers_text if offers_text else "Nessuna offerta trovata."
 
 async def send_telegram_message(message):
     """
@@ -96,10 +91,6 @@ async def send_telegram_message(message):
 @app.route("/")
 def home():
     return "🤖 Bot attivo"
-
-@app.route("/ping")
-def ping():
-    return "pong", 200
 
 @app.route("/fetch_offers")
 def fetch_offers():
