@@ -10,8 +10,8 @@ bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 # URL delle offerte Amazon
 AMAZON_URLS = [
-    "https://www.amazon.it/dp/B0CZXYZ123",  # Esempio di URL prodotto
-    "https://www.amazon.it/dp/B0CZXYZ456",
+    "https://www.amazon.it/gp/bestsellers",  # Esempio di URL prodotto
+    "https://www.amazon.it/gp/movers-and-shakers",
 ]
 
 # Funzione per estrarre informazioni dal prodotto Amazon
