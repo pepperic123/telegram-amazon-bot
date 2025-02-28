@@ -20,7 +20,7 @@ TELEGRAM_CHAT_ID = "-1002290458283"
 
 # Crea l'app Flask e il bot Telegram
 app = Flask(__name__)
-bot = telegram.Bot(token=TELEGRAM_BOT_TOKEN)
+bot = telegram.Bot(token=7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0)
 
 def generate_amazon_signed_url():
     """
