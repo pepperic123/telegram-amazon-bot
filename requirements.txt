@@ -7,3 +7,4 @@ schedule
 boto3
 requests
 python-amazon-paapi
+amazon.paapi
