@@ -5,7 +5,8 @@ import base64
 import time
 import urllib.parse
 from flask import Flask
-import telegram
+from telegram import Bot
+from telegram.constants import ParseMode
 from bs4 import BeautifulSoup
 import os
 import logging
@@ -25,7 +26,7 @@ TELEGRAM_CHAT_ID = "-1002290458283"
 
 # Crea l'app Flask e il bot Telegram
 app = Flask(__name__)
-bot = telegram.Bot(token=TELEGRAM_BOT_TOKEN)
+bot = Bot(token=TELEGRAM_BOT_TOKEN)
 
 def generate_amazon_signed_url():
     """
@@ -60,6 +61,7 @@ def get_amazon_offers():
     """
     url = generate_amazon_signed_url()
     response = requests.get(url)
+    logger.info(f"Amazon API Response: {response.content}")
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, "xml")
         items = soup.find_all("Item")
@@ -85,7 +87,7 @@ def send_telegram_message(message):
     Invia un messaggio al canale o gruppo Telegram configurato.
     """
     try:
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=telegram.ParseMode.MARKDOWN)
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN_V2)
         logger.info("Messaggio inviato con successo!")
     except Exception as e:
         logger.error(f"Errore durante l'invio del messaggio: {e}")
@@ -108,6 +110,3 @@ def fetch_offers():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=True)
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
