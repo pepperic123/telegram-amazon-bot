@@ -37,7 +37,7 @@ AMAZON_URLS = [
 ]
 
 SENT_ASINS_FILE = "sent_asins.txt"
-PULSE_URL = "https://your-render-app-url.com/ping"  # Modifica con il tuo URL
+PULSE_URL = "https://telegram-amazon-bot-9zsc.onrender.com/ping"  # Modifica con il tuo URL
 
 # Configurazione Selenium
 chrome_options = Options()
