@@ -24,7 +24,8 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/bestsellers/",
     "https://www.amazon.it/gp/movers-and-shakers/",
     "https://www.amazon.it/gp/new-releases/",
-    "https://www.amazon.it/gp/most-wished-for/"
+    "https://www.amazon.it/gp/most-wished-for/",
+    "https://www.amazon.it/gp/most-gifted/"
 ]
 
 SENT_ASINS_FILE = "sent_asins.txt"
