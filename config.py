@@ -10,3 +10,5 @@ SCRAPERAPI_KEY = "73addc3cbaf02af137ac90f13d6f091f"
 RAPIDAPI_HOST = "amazon-product-advertising-api.p.rapidapi.com"
 # URL endpoint fornito da RapidAPI per il Product Advertising API
 RAPIDAPI_URL = "https://amazon-product-advertising-api.p.rapidapi.com/paapi5/searchitems"
+TELEGRAM_BOT_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
+TELEGRAM_CHAT_ID = "-1002290458283"
