@@ -60,9 +60,9 @@ def get_amazon_product_details(url):
 # Funzione per inviare il messaggio su Telegram
 def send_telegram_message(product):
     affiliate_url = f"{product['url']}?tag=new1707-21"
-    message = f"🔥 *Super Offerta!* 🔥\n\n"
-    message += f"[{product['title']}]({affiliate_url})\n"
+    message = f"🔥 *{product['title']}* 🔥\n\n"
     message += f"🛒 *Clicca sull'immagine per vedere il prezzo!*\n"
+    message += f"🔗 [Acquista ora su Amazon]({affiliate_url})"
     
     bot.send_photo(CHAT_ID, product["image_url"], caption=message, parse_mode="Markdown")
     print("Messaggio inviato su Telegram!")
