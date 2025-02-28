@@ -39,7 +39,7 @@ chrome_options.add_argument("--window-size=1920x1080")
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
 chrome_options.add_experimental_option("useAutomationExtension", False)
-chrome_options.binary_location = "/usr/bin/chromium"  # Per Render
+chrome_options.binary_location = "/usr/bin/chromium"
 
 # Rotazione User-Agent
 user_agents = [
@@ -129,25 +129,31 @@ async def send_telegram(offer):
     except Exception as e:
         print(f"❌ Errore invio Telegram: {str(e)}")
 
-def job():
+async def job():
     print("⚡ Avvio nuovo scan")
     offers = get_amazon_offers()
     if offers:
         random.shuffle(offers)
         for offer in offers:
             if offer['asin'] not in sent_asins:
-                asyncio.run(send_telegram(offer))
+                await send_telegram(offer)
                 break
     else:
         print("⏭️ Nessuna offerta trovata")
 
 def keep_alive():
     while True:
-        time.sleep(600)
-        requests.get(PULSE_URL)
+        try:
+            time.sleep(600)
+            response = requests.get(PULSE_URL, timeout=10)
+            print(f"🌍 Ping a Render: {response.status_code}")
+        except requests.RequestException as e:
+            print(f"⚠️ Errore keep_alive: {e}")
 
 def run_scheduler():
-    schedule.every(35).to(55).minutes.do(job)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    schedule.every(35).to(55).minutes.do(lambda: loop.run_until_complete(job()))
     while True:
         schedule.run_pending()
         time.sleep(60)
@@ -164,4 +170,3 @@ if __name__ == "__main__":
     threading.Thread(target=run_scheduler, daemon=True).start()
     threading.Thread(target=keep_alive, daemon=True).start()
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8000)), use_reloader=False)
-
