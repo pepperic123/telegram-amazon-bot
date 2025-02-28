@@ -6,6 +6,7 @@ import time
 import urllib.parse
 from flask import Flask
 import telegram
+from telegram.constants import ParseMode  # Import necessario per ParseMode.MARKDOWN
 from bs4 import BeautifulSoup
 import os
 
@@ -32,10 +33,6 @@ bot = telegram.Bot(token=TELEGRAM_BOT_TOKEN)
 # Funzione per generare una URL firmata per la PA‑API
 # --------------------------
 def generate_amazon_signed_url():
-    """
-    Genera una URL firmata per effettuare una richiesta ItemSearch alla PA‑API.
-    Questa implementazione usa l'endpoint XML (vecchio formato PA‑API) e cerca prodotti con la parola chiave 'offerte'.
-    """
     endpoint = "webservices.amazon.it"
     uri = "/onca/xml"
     params = {
@@ -53,7 +50,7 @@ def generate_amazon_signed_url():
     query_string = urllib.parse.urlencode(sorted_params)
     # Crea la stringa da firmare
     string_to_sign = f"GET\n{endpoint}\n{uri}\n{query_string}"
-    # Firma la stringa con HMAC-SHA256 usando la AWS_SECRET_KEY
+    # Firma la stringa con HMAC-SHA256 usando AWS_SECRET_KEY
     signature = hmac.new(AWS_SECRET_KEY.encode('utf-8'),
                          string_to_sign.encode('utf-8'),
                          hashlib.sha256).digest()
@@ -66,10 +63,6 @@ def generate_amazon_signed_url():
 # Funzione per ottenere le offerte da Amazon
 # --------------------------
 def get_amazon_offers():
-    """
-    Effettua una richiesta alla PA‑API e restituisce un testo formattato con i primi 5 prodotti trovati.
-    Il risultato viene parsato dall'XML a testo leggibile.
-    """
     url = generate_amazon_signed_url()
     response = requests.get(url)
     if response.status_code == 200:
@@ -78,7 +71,7 @@ def get_amazon_offers():
         if not items:
             return "Nessuna offerta trovata."
         offers_text = ""
-        # Estrai le informazioni dai primi 5 prodotti
+        # Estrai i primi 5 prodotti (modifica se necessario)
         for item in items[:5]:
             title_tag = item.find("Title")
             price_tag = item.find("FormattedPrice")
@@ -96,13 +89,10 @@ def get_amazon_offers():
 # Funzione per inviare un messaggio su Telegram
 # --------------------------
 def send_telegram_message(message):
-    """
-    Invia un messaggio al canale o gruppo Telegram configurato.
-    """
-    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=telegram.ParseMode.MARKDOWN)
+    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN)
 
 # --------------------------
-# Endpoint Flask per verificare lo stato del bot
+# Endpoints Flask
 # --------------------------
 @app.route("/")
 def home():
@@ -112,9 +102,6 @@ def home():
 def ping():
     return "Bot is running!", 200
 
-# --------------------------
-# Endpoint per recuperare le offerte e inviarle su Telegram
-# --------------------------
 @app.route("/fetch_offers")
 def fetch_offers():
     offers = get_amazon_offers()
