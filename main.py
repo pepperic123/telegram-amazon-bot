@@ -2,10 +2,9 @@ import requests
 from bs4 import BeautifulSoup
 import telebot
 import time
-import random
 import os
 
-# Configurazione bot Telegram
+# Configurazione del bot Telegram
 TELEGRAM_BOT_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
 CHAT_ID = "-1001434969904"
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
@@ -49,19 +48,27 @@ def get_amazon_product_details(url):
     
     # Estrazione ASIN (per evitare duplicati)
     asin_tag = soup.find("input", {"id": "ASIN"})
-    asin = asin_tag["value"] if asin_tag else str(random.randint(100000, 999999))
+    asin = asin_tag["value"] if asin_tag else None
     
     # Estrazione immagine
     image_tag = soup.find("img", id="landingImage")
     image_url = image_tag["src"] if image_tag else "https://via.placeholder.com/300"
     
-    return {"title": title, "image_url": image_url, "url": url, "asin": asin}
+    # Estrazione prezzo
+    price_tag = soup.find("span", class_="a-price-whole")
+    decimal_tag = soup.find("span", class_="a-price-fraction")
+    if price_tag and decimal_tag:
+        price = f"{price_tag.text.strip()},{decimal_tag.text.strip()} €"
+    else:
+        price = "Non disponibile"
+    
+    return {"title": title, "image_url": image_url, "url": url, "asin": asin, "price": price}
 
 # Funzione per inviare il messaggio su Telegram
 def send_telegram_message(product):
     affiliate_url = f"{product['url']}?tag=new1707-21"
-    message = f"🔥 *{product['title']}* 🔥\n\n"
-    message += f"🛒 *Clicca sull'immagine per vedere il prezzo!*\n"
+    message = f"🔥 *{product['title']}*\n\n"
+    message += f"💰 Prezzo: {product['price']}\n\n"
     message += f"🔗 [Acquista ora su Amazon]({affiliate_url})"
     
     bot.send_photo(CHAT_ID, product["image_url"], caption=message, parse_mode="Markdown")
