@@ -4,13 +4,11 @@ import threading
 import schedule
 import os
 import asyncio
-import json
-import boto3
-from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from telegram import Bot
 from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 import requests
+from amazon.paapi import AmazonAPI  # Libreria per PA-API
 
 # Configurazione
 TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
@@ -23,12 +21,7 @@ SENT_ASINS_FILE = "sent_asins.txt"
 PULSE_URL = "https://telegram-amazon-bot-9zsc.onrender.com/ping"  # Modifica con il tuo URL
 
 # Inizializzazione del client PA-API
-paapi5_client = boto3.client(
-    'paapi5',
-    aws_access_key_id=AWS_ACCESS_KEY,
-    aws_secret_access_key=AWS_SECRET_KEY,
-    region_name='eu-west-1'
-)
+amazon = AmazonAPI(AWS_ACCESS_KEY, AWS_SECRET_KEY, AMAZON_ASSOCIATE_TAG, "IT")
 
 # Funzioni di gestione ASIN
 def load_sent_asins():
@@ -57,30 +50,24 @@ def get_amazon_offers():
 
     try:
         # Esempio di ricerca di prodotti in offerta
-        response = paapi5_client.search_items(
-            PartnerTag=AMAZON_ASSOCIATE_TAG,
-            PartnerType='Associates',
-            Keywords='offerta',
-            SearchIndex='All',
-            Resources=['Images.Primary.Medium', 'ItemInfo.Title', 'Offers.Listings.Price']
+        products = amazon.search_items(
+            keywords="offerta",
+            search_index="All",
+            item_count=10
         )
 
-        for item in response['SearchResult']['Items']:
-            asin = item['ASIN']
+        for product in products:
+            asin = product.asin
             if asin in seen_products or asin in sent_asins:
                 continue
             seen_products.add(asin)
 
-            title = item['ItemInfo']['Title']['DisplayValue']
-            url = item['DetailPageURL']
+            title = product.title
+            url = product.detail_page_url
             full_url = add_affiliate_tag(url)
 
             offers.append({'title': title, 'link': full_url, 'asin': asin})
-            if len(offers) >= 10:
-                break
 
-    except (NoCredentialsError, PartialCredentialsError) as e:
-        print(f"⚠️ Errore credenziali: {str(e)}")
     except Exception as e:
         print(f"⚠️ Errore PA-API: {str(e)}")
 
