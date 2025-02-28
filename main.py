@@ -15,7 +15,7 @@ import asyncio
 # Configurazione Amazon PA‑API
 # --------------------------
 AWS_ACCESS_KEY = "AKPAV0YTNY1740423739"
-AWS_SECRET_KEY = "g0N1qt9tB2AUB+chkTDjakR3nafgqmkGkfr77/2h""
+AWS_SECRET_KEY = "g0N1qt9tB2AUB+chkTDjakR3nafgqmkGkfr77/2h"
 ASSOCIATE_TAG = "new1707-21"
 
 # --------------------------
