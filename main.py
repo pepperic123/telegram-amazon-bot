@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import telebot
 import time
+import random
 import os
 
 # Configurazione bot Telegram
@@ -15,20 +16,15 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/movers-and-shakers",
 ]
 
-# Tag affiliato Amazon
-AFFILIATE_TAG = "new1707-21"
-
-# File per tracciare i prodotti già inviati
+# Percorso file per evitare ripetizioni
 SENT_ASINS_FILE = "sent_asins.txt"
 
-# Funzione per caricare gli ASIN già inviati
 def load_sent_asins():
-    if not os.path.exists(SENT_ASINS_FILE):
-        return set()
-    with open(SENT_ASINS_FILE, "r") as f:
-        return set(f.read().splitlines())
+    if os.path.exists(SENT_ASINS_FILE):
+        with open(SENT_ASINS_FILE, "r") as f:
+            return set(f.read().splitlines())
+    return set()
 
-# Funzione per salvare gli ASIN inviati
 def save_sent_asin(asin):
     with open(SENT_ASINS_FILE, "a") as f:
         f.write(asin + "\n")
@@ -49,46 +45,40 @@ def get_amazon_product_details(url):
     
     # Estrazione titolo
     title_tag = soup.find("span", id="productTitle")
-    title = title_tag.text.strip() if title_tag else "Titolo non trovato"
+    title = title_tag.text.strip() if title_tag else "Offerta Amazon"
     
-    # Estrazione prezzo
-    price_tag = soup.find("span", class_="a-price-whole")
-    price = price_tag.text.strip() if price_tag else "Prezzo non disponibile"
+    # Estrazione ASIN (per evitare duplicati)
+    asin_tag = soup.find("input", {"id": "ASIN"})
+    asin = asin_tag["value"] if asin_tag else str(random.randint(100000, 999999))
     
     # Estrazione immagine
     image_tag = soup.find("img", id="landingImage")
     image_url = image_tag["src"] if image_tag else "https://via.placeholder.com/300"
     
-    # Estrazione ASIN dal link del prodotto
-    asin = url.split("/dp/")[-1].split("/")[0]
-    
-    # Costruzione del link affiliato
-    affiliate_url = f"https://www.amazon.it/dp/{asin}/?tag={AFFILIATE_TAG}"
-    
-    return {"title": title, "price": price, "image_url": image_url, "url": affiliate_url, "asin": asin}
+    return {"title": title, "image_url": image_url, "url": url, "asin": asin}
 
 # Funzione per inviare il messaggio su Telegram
 def send_telegram_message(product):
-    message = f"\U0001F525 *Super Offerta!* \U0001F525\n\n"
-    message += f"[{product['title']}]({product['url']})\n"
-    message += f"\U0001F4B0 *Prezzo:* {product['price']}€\n"
+    affiliate_url = f"{product['url']}?tag=new1707-21"
+    message = f"🔥 *Super Offerta!* 🔥\n\n"
+    message += f"[{product['title']}]({affiliate_url})\n"
+    message += f"🛒 *Clicca sull'immagine per vedere il prezzo!*\n"
     
     bot.send_photo(CHAT_ID, product["image_url"], caption=message, parse_mode="Markdown")
     print("Messaggio inviato su Telegram!")
 
-# Avvio dello scraping ogni 30 minuti
+# Avvio dello scraping
 def main():
     sent_asins = load_sent_asins()
-    while True:
-        for url in AMAZON_URLS:
-            product = get_amazon_product_details(url)
-            if product and product["asin"] not in sent_asins:
-                send_telegram_message(product)
-                save_sent_asin(product["asin"])
-                sent_asins.add(product["asin"])
-            time.sleep(5)  # Pausa tra le richieste per evitare blocchi
-        print("Attesa di 30 minuti prima del prossimo invio...")
-        time.sleep(1800)  # Attesa di 30 minuti
+    
+    for url in AMAZON_URLS:
+        product = get_amazon_product_details(url)
+        if product and product["asin"] not in sent_asins:
+            send_telegram_message(product)
+            save_sent_asin(product["asin"])
+        time.sleep(5)  # Pausa per evitare blocchi
 
-if __name__ == "__main__":
+# Esecuzione periodica ogni 30 minuti
+while True:
     main()
+    time.sleep(1800)
