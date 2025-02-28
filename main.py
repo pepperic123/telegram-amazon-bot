@@ -1,4 +1,4 @@
-import os  # Aggiungi questa linea
+import os
 import requests
 import json
 import logging
@@ -44,7 +44,8 @@ def get_amazon_offers():
     Effettua una richiesta alla PA-API 5.0 e restituisce un testo con le offerte trovate.
     """
     endpoint = "webservices.amazon.eu"
-    url = f"https://{endpoint}/paapi5/searchitems"
+    uri = "/paapi5/searchitems"
+    url = f"https://{endpoint}{uri}"
     params = generate_amazon_paapi5_request()
     auth = AWSRequestsAuth(
         aws_access_key=AWS_ACCESS_KEY,
@@ -57,7 +58,10 @@ def get_amazon_offers():
         "Content-Type": "application/json",
         "X-Amz-Target": "com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems"
     }
+    logger.info(f"Invio richiesta a: {url}")
+    logger.info(f"Parametri della richiesta: {params}")
     response = requests.post(url, data=params, headers=headers, auth=auth)
+    logger.info(f"Risposta API: {response.status_code}, {response.text}")
     if response.status_code == 200:
         return parse_amazon_response(response.json())
     else:
@@ -101,5 +105,5 @@ def fetch_offers():
     return "Offerte inviate!"
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # Usa la porta da Render o 10000 come fallback
+    port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=True)
