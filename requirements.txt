@@ -7,3 +7,4 @@ schedule
 boto3
 requests
 aws_requests_auth
+feedparser
