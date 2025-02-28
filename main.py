@@ -3,7 +3,7 @@ import re
 import json
 import logging
 import datetime
-import requests
+import time
 import asyncio
 from flask import Flask, Response
 from bs4 import BeautifulSoup
@@ -11,6 +11,14 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from telegram import Bot
 from telegram.constants import ParseMode
+
+# Import per Selenium
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 
 # ------------------------ CONFIGURAZIONE ------------------------
 TELEGRAM_BOT_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
@@ -40,6 +48,32 @@ HTML_SOURCES = [
 ]
 
 # ------------------------ FUNZIONI UTILI ------------------------
+
+def get_dynamic_content(url, timeout=15):
+    """
+    Avvia Selenium in modalità headless per caricare la pagina e restituire l'HTML
+    dopo che il contenuto dinamico è stato caricato.
+    """
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    # Avvia il driver con webdriver-manager
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+    driver.get(url)
+    try:
+        # Attende che almeno il tag <body> sia presente (puoi modificare questo criterio)
+        WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
+        # Ulteriore attesa per garantire il caricamento completo (modifica se necessario)
+        time.sleep(3)
+    except Exception as e:
+        logger.error(f"Timeout o errore nel caricamento dinamico di {url}: {e}")
+    html = driver.page_source
+    driver.quit()
+    return html
+
 def load_sent_offers():
     """Carica dal file la lista degli URL delle offerte già inviate."""
     if os.path.exists(SENT_OFFERS_FILE):
@@ -59,25 +93,11 @@ def scrape_amazon_deals(url):
     """
     Esegue lo scraping di una pagina Amazon per ottenere le offerte.
     Ritorna una lista di dizionari con: title, link, discount, pubDate.
-    Utilizza diversi selettori per ampliare la ricerca degli elementi delle offerte.
+    Utilizza Selenium per ottenere l'HTML dinamico e diversi selettori per ampliare la ricerca.
     """
     logger.info(f"Scraping {url} ...")
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36"
-        )
-    }
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code != 200:
-            logger.error(f"Errore nello scraping di {url}, status code: {response.status_code}")
-            return []
-    except Exception as e:
-        logger.error(f"Errore durante la richiesta a {url}: {e}")
-        return []
-
-    soup = BeautifulSoup(response.content, "html.parser")
+    html = get_dynamic_content(url)
+    soup = BeautifulSoup(html, "html.parser")
     deals = []
 
     # Definiamo una lista di selettori per cercare container di offerte
@@ -169,7 +189,6 @@ def gather_all_deals():
     for deal in all_deals:
         unique_deals[deal["link"]] = deal
 
-    # Converti di nuovo in lista e ordina per sconto decrescente
     final_deals = list(unique_deals.values())
     final_deals.sort(key=lambda d: d["discount"], reverse=True)
     return final_deals
@@ -216,7 +235,7 @@ async def send_telegram_message(message):
 # ------------------------ ENDPOINTS FLASK ------------------------
 @app.route("/")
 def home():
-    return "🤖 Bot attivo - Multi-Fonte"
+    return "🤖 Bot attivo - Multi-Fonte (Selenium)"
 
 @app.route("/rss")
 def rss_feed():
@@ -243,13 +262,11 @@ def fetch_offer():
         return "Nessuna offerta trovata."
 
     sent_offers = load_sent_offers()
-    # Filtra le offerte non ancora inviate
     new_deals = [deal for deal in deals if deal["link"] not in sent_offers]
     if not new_deals:
         logger.info("Nessuna nuova offerta da inviare.")
         return "Nessuna nuova offerta da inviare."
 
-    # Seleziona la migliore offerta (la prima, poiché sono ordinate per sconto decrescente)
     best_deal = new_deals[0]
     message = (
         f"🔥 *{best_deal['title']}*\n"
@@ -258,7 +275,6 @@ def fetch_offer():
     )
     asyncio.run(send_telegram_message(message))
 
-    # Registra l'offerta come inviata per evitare duplicati
     sent_offers.append(best_deal["link"])
     save_sent_offers(sent_offers)
     logger.info(f"Offerta inviata: {best_deal['title']}")
