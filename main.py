@@ -10,6 +10,7 @@ from telegram.constants import ParseMode
 from bs4 import BeautifulSoup
 import os
 import logging
+import asyncio
 
 # Configura il logging
 logging.basicConfig(level=logging.INFO)
@@ -82,12 +83,12 @@ def get_amazon_offers():
         logger.error(f"Errore nella richiesta: {response.status_code}")
         return f"Errore nella richiesta: {response.status_code}"
 
-def send_telegram_message(message):
+async def send_telegram_message(message):
     """
     Invia un messaggio al canale o gruppo Telegram configurato.
     """
     try:
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN_V2)
+        await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN_V2)
         logger.info("Messaggio inviato con successo!")
     except Exception as e:
         logger.error(f"Errore durante l'invio del messaggio: {e}")
@@ -104,7 +105,7 @@ def ping():
 def fetch_offers():
     offers = get_amazon_offers()
     logger.info(f"Offerte trovate: {offers}")
-    send_telegram_message(offers)
+    asyncio.run(send_telegram_message(offers))
     return "Offerte inviate!"
 
 if __name__ == "__main__":
