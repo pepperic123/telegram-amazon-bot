@@ -1,3 +1,4 @@
+import os  # Aggiungi questa linea
 import requests
 import json
 import logging
@@ -100,5 +101,5 @@ def fetch_offers():
     return "Offerte inviate!"
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT", 10000))  # Usa la porta da Render o 10000 come fallback
     app.run(host="0.0.0.0", port=port, debug=True)
