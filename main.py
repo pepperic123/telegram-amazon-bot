@@ -59,6 +59,9 @@ def get_dynamic_content(url, timeout=15):
     options.add_argument("--headless")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
+    # Specifica la posizione del binary di Chrome, se disponibile
+    options.binary_location = os.environ.get("GOOGLE_CHROME_BIN", "/usr/bin/google-chrome")
+    
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
     driver.get(url)
