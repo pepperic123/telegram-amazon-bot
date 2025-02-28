@@ -6,4 +6,4 @@ python-telegram-bot
 schedule
 boto3
 requests
-paapi5-python-sdk
+git+https://github.com/amzn/paapi5-python-sdk.git
