@@ -5,7 +5,7 @@ import time
 
 # Configurazione bot Telegram
 TELEGRAM_BOT_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
-CHAT_ID = "-1001434969904”
+CHAT_ID = "-1001434969904"
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 # URL delle offerte Amazon
