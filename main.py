@@ -15,6 +15,7 @@ from telegram.constants import ParseMode
 # Import per Selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -58,15 +59,13 @@ def get_dynamic_content(url, timeout=15):
     options.add_argument("--headless")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
-    # Avvia il driver con webdriver-manager
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
     driver.get(url)
     try:
-        # Attende che almeno il tag <body> sia presente (puoi modificare questo criterio)
         WebDriverWait(driver, timeout).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        # Ulteriore attesa per garantire il caricamento completo (modifica se necessario)
         time.sleep(3)
     except Exception as e:
         logger.error(f"Timeout o errore nel caricamento dinamico di {url}: {e}")
@@ -100,7 +99,6 @@ def scrape_amazon_deals(url):
     soup = BeautifulSoup(html, "html.parser")
     deals = []
 
-    # Definiamo una lista di selettori per cercare container di offerte
     selectors = [
         {'tag': 'div', 'attrs': {"data-testid": "deal-card"}},
         {'tag': 'div', 'attrs': {"class": "DealContent"}},
@@ -114,13 +112,11 @@ def scrape_amazon_deals(url):
         if found:
             logger.info(f"{url} => Trovati {len(found)} elementi con selettore: tag {sel['tag']}, attrs {sel['attrs']}")
         deal_containers.extend(found)
-    # Rimuoviamo duplicati (basato sull'identità dell'oggetto)
     deal_containers = list({id(el): el for el in deal_containers}.values())
     logger.info(f"{url} => Numero totale di container trovati: {len(deal_containers)}")
 
     for container in deal_containers:
         try:
-            # Estrazione del titolo: prova diversi pattern
             title = None
             title_selectors = [
                 {'tag': 'span', 'attrs': {"class": re.compile(r"a-size-medium")}},
@@ -134,18 +130,14 @@ def scrape_amazon_deals(url):
             if not title:
                 continue
 
-            # Estrazione del link: cerca il primo tag <a> con href
             a_tag = container.find("a", href=True)
             if not a_tag:
                 continue
             href = a_tag["href"]
             link = "https://www.amazon.it" + href if href.startswith("/") else href
-
-            # Aggiungi l'associate tag se non presente
             if "tag=" not in link:
                 link += "&tag=" + ASSOCIATE_TAG if "?" in link else "?tag=" + ASSOCIATE_TAG
 
-            # Estrazione dello sconto: prova più selettori per cercare un pattern di percentuale
             discount = 0
             discount_selectors = [
                 {'tag': 'span', 'attrs': {"class": re.compile(r"savings", re.IGNORECASE)}},
@@ -183,12 +175,9 @@ def gather_all_deals():
     for source_url in HTML_SOURCES:
         deals = scrape_amazon_deals(source_url)
         all_deals.extend(deals)
-
-    # Rimuovi duplicati in base al link
     unique_deals = {}
     for deal in all_deals:
         unique_deals[deal["link"]] = deal
-
     final_deals = list(unique_deals.values())
     final_deals.sort(key=lambda d: d["discount"], reverse=True)
     return final_deals
@@ -199,8 +188,6 @@ def generate_rss_feed(deals):
     """
     rss = ET.Element("rss", version="2.0")
     channel = ET.SubElement(rss, "channel")
-    
-    # Informazioni sul canale
     ET.SubElement(channel, "title").text = "Migliori Offerte Amazon (Multi-Fonte)"
     ET.SubElement(channel, "link").text = "https://www.amazon.it"
     ET.SubElement(channel, "description").text = (
@@ -274,7 +261,6 @@ def fetch_offer():
         f"🔗 [Acquista ora]({best_deal['link']})"
     )
     asyncio.run(send_telegram_message(message))
-
     sent_offers.append(best_deal["link"])
     save_sent_offers(sent_offers)
     logger.info(f"Offerta inviata: {best_deal['title']}")
