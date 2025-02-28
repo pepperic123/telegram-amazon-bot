@@ -25,7 +25,15 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/movers-and-shakers/",
     "https://www.amazon.it/gp/new-releases/",
     "https://www.amazon.it/gp/most-wished-for/",
-    "https://www.amazon.it/gp/most-gifted/"
+    "https://www.amazon.it/gp/most-gifted/",
+    "https://www.amazon.it/gp/bestsellers/electronics",
+    "https://www.amazon.it/b/?node=11266884031",
+    "https://www.amazon.it/outlet",
+    "https://www.amazon.it/deals",
+    "https://www.amazon.it/gp/bestsellers/videogames",
+    "https://www.amazon.it/gp/bestsellers/books",
+    "https://www.amazon.it/gp/bestsellers/kitchen",
+    "https://www.amazon.it/gp/bestsellers/sports"
 ]
 
 SENT_ASINS_FILE = "sent_asins.txt"
