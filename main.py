@@ -8,6 +8,11 @@ from flask import Flask
 import telegram
 from bs4 import BeautifulSoup
 import os
+import logging
+
+# Configura il logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Configurazione Amazon PA‑API
 AWS_ACCESS_KEY = "AKPAV0YTNY1740423739"
@@ -25,7 +30,6 @@ bot = telegram.Bot(token=TELEGRAM_BOT_TOKEN)
 def generate_amazon_signed_url():
     """
     Genera una URL firmata per effettuare una richiesta ItemSearch alla PA‑API.
-    Questa implementazione è semplificata e utilizza l'endpoint XML.
     """
     endpoint = "webservices.amazon.it"
     uri = "/onca/xml"
@@ -39,24 +43,20 @@ def generate_amazon_signed_url():
         "Keywords": "offerte",
         "Timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     }
-    # Ordina i parametri e crea la stringa di query canonica
     sorted_params = sorted(params.items())
     query_string = urllib.parse.urlencode(sorted_params)
-    # Crea la stringa da firmare
     string_to_sign = f"GET\n{endpoint}\n{uri}\n{query_string}"
-    # Firma la stringa con HMAC-SHA256 usando la AWS_SECRET_KEY
     signature = hmac.new(AWS_SECRET_KEY.encode('utf-8'),
                          string_to_sign.encode('utf-8'),
                          hashlib.sha256).digest()
     signature = base64.b64encode(signature).decode()
-    # Costruisci l'URL firmato
     signed_url = f"https://{endpoint}{uri}?{query_string}&Signature={urllib.parse.quote(signature)}"
+    logger.info(f"Generated Signed URL: {signed_url}")
     return signed_url
 
 def get_amazon_offers():
     """
     Effettua una richiesta alla PA‑API e restituisce un testo con le offerte trovate.
-    Il risultato viene parsato da XML e i primi 5 prodotti (se presenti) vengono formattati.
     """
     url = generate_amazon_signed_url()
     response = requests.get(url)
@@ -66,7 +66,6 @@ def get_amazon_offers():
         if not items:
             return "Nessuna offerta trovata."
         offers_text = ""
-        # Prendi i primi 5 risultati
         for item in items[:5]:
             title_tag = item.find("Title")
             price_tag = item.find("FormattedPrice")
@@ -78,24 +77,37 @@ def get_amazon_offers():
                 offers_text += f"🔥 *{title}*\n💰 *{price}*\n🔗 [Acquista ora]({detail_url})\n\n"
         return offers_text if offers_text else "Nessuna offerta trovata."
     else:
+        logger.error(f"Errore nella richiesta: {response.status_code}")
         return f"Errore nella richiesta: {response.status_code}"
 
 def send_telegram_message(message):
     """
     Invia un messaggio al canale o gruppo Telegram configurato.
     """
-    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=telegram.ParseMode.MARKDOWN)
+    try:
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=telegram.ParseMode.MARKDOWN)
+        logger.info("Messaggio inviato con successo!")
+    except Exception as e:
+        logger.error(f"Errore durante l'invio del messaggio: {e}")
 
 @app.route("/")
 def home():
     return "🤖 Bot attivo"
 
+@app.route("/ping")
+def ping():
+    return "pong", 200
+
 @app.route("/fetch_offers")
 def fetch_offers():
     offers = get_amazon_offers()
+    logger.info(f"Offerte trovate: {offers}")
     send_telegram_message(offers)
     return "Offerte inviate!"
 
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=True)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
