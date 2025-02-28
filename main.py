@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import telebot
 import time
+import os
 
 # Configurazione bot Telegram
 TELEGRAM_BOT_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
@@ -10,9 +11,27 @@ bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 # URL delle offerte Amazon
 AMAZON_URLS = [
-    "https://www.amazon.it/gp/bestsellers",  # Bestseller Amazon
-    "https://www.amazon.it/gp/movers-and-shakers",  # Trend di crescita
+    "https://www.amazon.it/gp/bestsellers",
+    "https://www.amazon.it/gp/movers-and-shakers",
 ]
+
+# Tag affiliato Amazon
+AFFILIATE_TAG = "new1707-21"
+
+# File per tracciare i prodotti già inviati
+SENT_ASINS_FILE = "sent_asins.txt"
+
+# Funzione per caricare gli ASIN già inviati
+def load_sent_asins():
+    if not os.path.exists(SENT_ASINS_FILE):
+        return set()
+    with open(SENT_ASINS_FILE, "r") as f:
+        return set(f.read().splitlines())
+
+# Funzione per salvare gli ASIN inviati
+def save_sent_asin(asin):
+    with open(SENT_ASINS_FILE, "a") as f:
+        f.write(asin + "\n")
 
 # Funzione per estrarre informazioni dal prodotto Amazon
 def get_amazon_product_details(url):
@@ -34,35 +53,42 @@ def get_amazon_product_details(url):
     
     # Estrazione prezzo
     price_tag = soup.find("span", class_="a-price-whole")
-    decimal_tag = soup.find("span", class_="a-price-fraction")
     price = price_tag.text.strip() if price_tag else "Prezzo non disponibile"
-    decimal = decimal_tag.text.strip() if decimal_tag else "00"
-    full_price = f"{price},{decimal}€" if price_tag else "Prezzo non disponibile"
     
     # Estrazione immagine
     image_tag = soup.find("img", id="landingImage")
-    image_url = image_tag["src"] if image_tag else None
+    image_url = image_tag["src"] if image_tag else "https://via.placeholder.com/300"
     
-    return {"title": title, "price": full_price, "image_url": image_url, "url": url}
+    # Estrazione ASIN dal link del prodotto
+    asin = url.split("/dp/")[-1].split("/")[0]
+    
+    # Costruzione del link affiliato
+    affiliate_url = f"https://www.amazon.it/dp/{asin}/?tag={AFFILIATE_TAG}"
+    
+    return {"title": title, "price": price, "image_url": image_url, "url": affiliate_url, "asin": asin}
 
 # Funzione per inviare il messaggio su Telegram
 def send_telegram_message(product):
-    if not product["image_url"]:
-        print("⚠️ Nessuna immagine disponibile, invio solo testo.")
-        message = f"🔥 *Super Offerta!* 🔥\n\n[{product['title']}]({product['url']})\n💰 *Prezzo:* {product['price']}€\n"
-        bot.send_message(CHAT_ID, message, parse_mode="Markdown")
-    else:
-        message = f"🔥 *Super Offerta!* 🔥\n\n[{product['title']}]({product['url']})\n💰 *Prezzo:* {product['price']}€\n"
-        bot.send_photo(CHAT_ID, product["image_url"], caption=message, parse_mode="Markdown")
+    message = f"\U0001F525 *Super Offerta!* \U0001F525\n\n"
+    message += f"[{product['title']}]({product['url']})\n"
+    message += f"\U0001F4B0 *Prezzo:* {product['price']}€\n"
+    
+    bot.send_photo(CHAT_ID, product["image_url"], caption=message, parse_mode="Markdown")
     print("Messaggio inviato su Telegram!")
 
-# Avvio dello scraping
+# Avvio dello scraping ogni 30 minuti
 def main():
-    for url in AMAZON_URLS:
-        product = get_amazon_product_details(url)
-        if product:
-            send_telegram_message(product)
-        time.sleep(5)  # Pausa tra le richieste per evitare blocchi
+    sent_asins = load_sent_asins()
+    while True:
+        for url in AMAZON_URLS:
+            product = get_amazon_product_details(url)
+            if product and product["asin"] not in sent_asins:
+                send_telegram_message(product)
+                save_sent_asin(product["asin"])
+                sent_asins.add(product["asin"])
+            time.sleep(5)  # Pausa tra le richieste per evitare blocchi
+        print("Attesa di 30 minuti prima del prossimo invio...")
+        time.sleep(1800)  # Attesa di 30 minuti
 
 if __name__ == "__main__":
     main()
