@@ -1,6 +1,7 @@
 import time
 import random
 import boto3
+import amazon-paapi
 from botocore.exceptions import NoCredentialsError
 from telegram import Bot
 from flask import Flask
