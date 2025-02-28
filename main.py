@@ -16,8 +16,8 @@ import requests
 TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
 CHAT_ID = "-1002290458283"
 AMAZON_ASSOCIATE_TAG = "new1707-21"
-AWS_ACCESS_KEY = "nascosto"  # Inserisci la tua Access Key
-AWS_SECRET_KEY = "nascosto"  # Inserisci la tua Secret Key
+AWS_ACCESS_KEY = "AKPAV0YTNY1740423739"
+AWS_SECRET_KEY = "g0N1qt9tB2AUB+chkTDjakR3nafgqmkGkfr77/2h"
 
 SENT_ASINS_FILE = "sent_asins.txt"
 PULSE_URL = "https://telegram-amazon-bot-9zsc.onrender.com/ping"  # Modifica con il tuo URL
