@@ -4,19 +4,21 @@ import threading
 import schedule
 import os
 import asyncio
-import re
 import json
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from telegram import Bot
 from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+import requests
 
 # Configurazione
-TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
-CHAT_ID = "-1002290458283"
+TOKEN = "TOKEN"
+CHAT_ID = "CHATID"
 AMAZON_ASSOCIATE_TAG = "new1707-21"
 AMAZON_URLS = [
     "https://www.amazon.it/gp/bestsellers/",
@@ -25,21 +27,21 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/most-wished-for/"
 ]
 
-# File per salvare gli ASIN già inviati
 SENT_ASINS_FILE = "sent_asins.txt"
+PULSE_URL = "https://your-render-app-url.com/ping"  # Modifica con il tuo URL
 
 # Configurazione Selenium
 chrome_options = Options()
 chrome_options.add_argument("--headless")
-chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--window-size=1920x1080")
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
 chrome_options.add_experimental_option("useAutomationExtension", False)
+chrome_options.binary_location = "/usr/bin/chromium"  # Per Render
 
-# User-Agent rotation
+# Rotazione User-Agent
 user_agents = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15",
@@ -47,15 +49,15 @@ user_agents = [
 ]
 chrome_options.add_argument(f"user-agent={random.choice(user_agents)}")
 
-# Caricare ASIN inviati da file
+# Funzioni di gestione ASIN
 def load_sent_asins():
     if os.path.exists(SENT_ASINS_FILE):
         with open(SENT_ASINS_FILE, "r") as file:
             return set(file.read().splitlines())
     return set()
 
-# Salvare ASIN inviati
 sent_asins = load_sent_asins()
+
 def save_sent_asins():
     with open(SENT_ASINS_FILE, "w") as file:
         file.write("\n".join(sent_asins))
@@ -77,10 +79,11 @@ def extract_title(item):
 
 def get_amazon_offers():
     print("🔍 Avvio scraping...")
-    driver = webdriver.Chrome(options=chrome_options)
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     offers = []
     seen_products = set()
-
+    
     for url in AMAZON_URLS:
         print(f"📡 Scraping {url}")
         driver.get(url)
@@ -93,7 +96,7 @@ def get_amazon_offers():
                 link = item.find('a', {'class': 'a-link-normal'})
                 if not link or "/dp/" not in link.get('href'):
                     continue
-
+                
                 full_url = add_affiliate_tag(f"https://www.amazon.it{link.get('href').split('?')[0]}")
                 asin = link.get("href").split("/dp/")[1].split("/")[0]
 
@@ -102,7 +105,6 @@ def get_amazon_offers():
                 seen_products.add(asin)
 
                 title = extract_title(item)
-
                 offers.append({'title': title, 'link': full_url, 'asin': asin})
                 if len(offers) >= 10:
                     break
@@ -119,6 +121,7 @@ async def send_telegram(offer):
         text = (f"🔥 **{offer['title']}**\n\n"
                 f"🎉 **Super Offerta!**\n\n"
                 f"🔗 [Acquista ora]({offer['link']})")
+        await asyncio.sleep(random.uniform(5, 15))  # Ritardo per evitare blocco
         await bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="Markdown", disable_web_page_preview=False)
         sent_asins.add(offer['asin'])
         save_sent_asins()
@@ -138,32 +141,27 @@ def job():
     else:
         print("⏭️ Nessuna offerta trovata")
 
+def keep_alive():
+    while True:
+        time.sleep(600)
+        requests.get(PULSE_URL)
+
 def run_scheduler():
     schedule.every(35).to(55).minutes.do(job)
     while True:
         schedule.run_pending()
         time.sleep(60)
 
-import os
-from flask import Flask
-
 app = Flask(__name__)
-
 @app.route('/')
 def home():
     return "🤖 Bot attivo"
-
 @app.route('/ping')
 def ping():
     return "Bot is running!", 200
 
-def run_flask():
-    port = int(os.environ.get("PORT", 8000))
-    app.run(host='0.0.0.0', port=port, use_reloader=False)
-
 if __name__ == "__main__":
     threading.Thread(target=run_scheduler, daemon=True).start()
-    threading.Thread(target=run_flask, daemon=True).start()
-    job()
-    while True:
-        time.sleep(3600)
+    threading.Thread(target=keep_alive, daemon=True).start()
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8000)), use_reloader=False)
+
