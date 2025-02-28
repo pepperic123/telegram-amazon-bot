@@ -9,3 +9,4 @@ requests
 aws_requests_auth
 feedparser
 pyTelegramBotAPI
+AmazonAPI
