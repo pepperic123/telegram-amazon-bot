@@ -13,11 +13,8 @@ from telegram import Bot
 from telegram.constants import ParseMode
 
 # ------------------------ CONFIGURAZIONE ------------------------
-# Dati Telegram
 TELEGRAM_BOT_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
 TELEGRAM_CHAT_ID = "-1002290458283"
-
-# Associate Tag Amazon
 ASSOCIATE_TAG = "new1707-21"
 
 # File per memorizzare le offerte già inviate (evitare duplicati)
@@ -30,6 +27,21 @@ app = Flask(__name__)
 # Configura il logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Elenco delle fonti Amazon da cui recuperare le offerte
+HTML_SOURCES = [
+    "https://www.amazon.it/gp/goldbox",
+    "https://www.amazon.it/gp/bestsellers",
+    "https://www.amazon.it/gp/movers-and-shakers",
+    "https://www.amazon.it/gp/most-gifted",
+    "https://www.amazon.it/gp/most-wished-for",
+    "https://www.amazon.it/gp/new-releases"
+    
+    # Aggiungi altre pagine di offerte Amazon, per esempio:
+    # "https://www.amazon.it/gp/bestsellers",
+    # "https://www.amazon.it/gp/movers-and-shakers",
+    # ecc.
+]
 
 # ------------------------ FUNZIONI UTILI ------------------------
 def load_sent_offers():
@@ -47,12 +59,13 @@ def save_sent_offers(sent_offers):
     with open(SENT_OFFERS_FILE, "w") as f:
         json.dump(sent_offers, f)
 
-def scrape_amazon_deals():
+def scrape_amazon_deals(url):
     """
-    Esegue lo scraping della pagina Amazon Gold Box per ottenere le offerte.
-    Ritorna una lista di dizionari con: title, link, discount e pubDate.
+    Esegue lo scraping di una pagina Amazon (es. Gold Box) per ottenere le offerte.
+    Ritorna una lista di dizionari con: title, link, discount, pubDate.
+    Adatta i selettori in base alla struttura della pagina.
     """
-    url = "https://www.amazon.it/gp/goldbox"
+    logger.info(f"Scraping {url} ...")
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -61,42 +74,43 @@ def scrape_amazon_deals():
     }
     try:
         response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            logger.error(f"Errore nello scraping di {url}, status code: {response.status_code}")
+            return []
     except Exception as e:
-        logger.error(f"Errore durante la richiesta ad Amazon: {e}")
-        return []
-    if response.status_code != 200:
-        logger.error(f"Errore nello scraping, status code: {response.status_code}")
+        logger.error(f"Errore durante la richiesta a {url}: {e}")
         return []
 
     soup = BeautifulSoup(response.content, "html.parser")
     deals = []
 
-    # Prova a individuare i container delle offerte con un attributo 'data-testid'
+    # Esempio di selettore generico (usato in precedenza). 
+    # Adattalo in base a come appare la pagina.
     deal_containers = soup.find_all("div", {"data-testid": "deal-card"})
     if not deal_containers:
         deal_containers = soup.find_all("div", class_="DealContent")
-    logger.info(f"Numero di container trovati: {len(deal_containers)}")
+    logger.info(f"{url} => Numero di container trovati: {len(deal_containers)}")
 
     for container in deal_containers:
         try:
-            # Estrazione del titolo (ricerca un tag <span> con classe tipo "a-size-medium")
+            # Estrazione del titolo
             title_tag = container.find("span", class_=re.compile("a-size-medium"))
             if not title_tag:
                 continue
             title = title_tag.get_text(strip=True)
 
-            # Estrazione del link: ricerca il primo tag <a> con attributo href
+            # Estrazione del link
             a_tag = container.find("a", href=True)
             if not a_tag:
                 continue
             href = a_tag["href"]
             link = "https://www.amazon.it" + href if href.startswith("/") else href
 
-            # Aggiungi l'associate tag se non presente nell'URL
+            # Aggiungi l'associate tag se non presente
             if "tag=" not in link:
                 link += "&tag=" + ASSOCIATE_TAG if "?" in link else "?tag=" + ASSOCIATE_TAG
 
-            # Estrazione della percentuale di sconto (es. "40% OFF")
+            # Estrazione dello sconto (regex su un tag dedicato)
             discount_tag = container.find("span", class_=re.compile("savings"))
             discount_text = discount_tag.get_text(strip=True) if discount_tag else ""
             discount_match = re.search(r'(\d{1,3})\s*%', discount_text)
@@ -111,29 +125,49 @@ def scrape_amazon_deals():
                 "pubDate": pubDate
             })
         except Exception as e:
-            logger.error(f"Errore nell'estrazione di un'offerta: {e}")
+            logger.error(f"Errore nell'estrazione di un'offerta da {url}: {e}")
             continue
 
-    # Ordina le offerte per sconto in ordine decrescente
-    deals = sorted(deals, key=lambda d: d["discount"], reverse=True)
     return deals
+
+def gather_all_deals():
+    """
+    Esegue lo scraping su tutte le fonti HTML definite in HTML_SOURCES,
+    unifica le offerte in un'unica lista, rimuove duplicati e ordina per sconto.
+    """
+    all_deals = []
+    for source_url in HTML_SOURCES:
+        deals = scrape_amazon_deals(source_url)
+        all_deals.extend(deals)
+
+    # Rimuovi duplicati in base al link
+    unique_deals = {}
+    for deal in all_deals:
+        unique_deals[deal["link"]] = deal
+
+    # Converti di nuovo in lista
+    final_deals = list(unique_deals.values())
+
+    # Ordina per sconto decrescente
+    final_deals.sort(key=lambda d: d["discount"], reverse=True)
+
+    return final_deals
 
 def generate_rss_feed(deals):
     """
-    Genera un feed RSS in formato XML a partire dalla lista delle offerte.
+    Genera un feed RSS in formato XML a partire dalla lista di offerte.
     """
     rss = ET.Element("rss", version="2.0")
     channel = ET.SubElement(rss, "channel")
     
-    # Informazioni sul canale RSS
-    ET.SubElement(channel, "title").text = "Migliori Offerte Amazon"
+    # Informazioni sul canale
+    ET.SubElement(channel, "title").text = "Migliori Offerte Amazon (Multi-Fonte)"
     ET.SubElement(channel, "link").text = "https://www.amazon.it"
     ET.SubElement(channel, "description").text = (
-        "Feed RSS dinamico con le migliori offerte e sconti da Amazon aggiornate in tempo reale."
+        "Feed RSS dinamico con le migliori offerte e sconti da Amazon (più fonti) aggiornate in tempo reale."
     )
     ET.SubElement(channel, "language").text = "it-it"
     
-    # Crea un item per ogni offerta
     for deal in deals:
         item = ET.SubElement(channel, "item")
         ET.SubElement(item, "title").text = f"{deal['title']} - Sconto del {deal['discount']}%"
@@ -161,14 +195,14 @@ async def send_telegram_message(message):
 # ------------------------ ENDPOINTS FLASK ------------------------
 @app.route("/")
 def home():
-    return "🤖 Bot attivo"
+    return "🤖 Bot attivo - Multi-fonte"
 
 @app.route("/rss")
 def rss_feed():
     """
-    Endpoint che restituisce il feed RSS dinamico.
+    Endpoint che restituisce il feed RSS dinamico unificando le offerte da più fonti.
     """
-    deals = scrape_amazon_deals()
+    deals = gather_all_deals()
     if not deals:
         return Response("Nessuna offerta trovata", status=200, mimetype="text/plain")
     rss_xml = generate_rss_feed(deals)
@@ -177,12 +211,12 @@ def rss_feed():
 @app.route("/fetch_offer")
 def fetch_offer():
     """
-    Endpoint da pingare (es. ogni 60 minuti tramite UptimeRobot) che:
-      - Seleziona l'offerta migliore (con sconto maggiore) non ancora inviata.
-      - La invia tramite Telegram.
+    Endpoint da pingare (es. ogni 60 minuti) che:
+      - Seleziona la migliore offerta (con sconto maggiore) non ancora inviata.
+      - La invia su Telegram.
       - Registra l'offerta inviata per non ripeterla.
     """
-    deals = scrape_amazon_deals()
+    deals = gather_all_deals()
     if not deals:
         logger.info("Nessuna offerta trovata.")
         return "Nessuna offerta trovata."
@@ -194,7 +228,7 @@ def fetch_offer():
         logger.info("Nessuna nuova offerta da inviare.")
         return "Nessuna nuova offerta da inviare."
 
-    # Seleziona la migliore offerta (la prima, poiché ordinata per sconto decrescente)
+    # Seleziona la migliore offerta (la prima, poiché sono ordinate per sconto decrescente)
     best_deal = new_deals[0]
     message = (
         f"🔥 *{best_deal['title']}*\n"
@@ -203,7 +237,7 @@ def fetch_offer():
     )
     asyncio.run(send_telegram_message(message))
 
-    # Registra l'offerta come inviata per evitare duplicati
+    # Registra l'offerta come inviata
     sent_offers.append(best_deal["link"])
     save_sent_offers(sent_offers)
     logger.info(f"Offerta inviata: {best_deal['title']}")
