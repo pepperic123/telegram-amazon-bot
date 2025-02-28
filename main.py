@@ -43,7 +43,7 @@ def get_amazon_offers():
     """
     Effettua una richiesta alla PA-API 5.0 e restituisce un testo con le offerte trovate.
     """
-    endpoint = "webservices.amazon.eu"
+    endpoint = "https://webservices.amazon.eu/paapi5/searchitems"
     uri = "/paapi5/searchitems"
     url = f"https://{endpoint}{uri}"
     params = generate_amazon_paapi5_request()
