@@ -1,10 +1,15 @@
+import requests
+import hashlib
+import hmac
+import base64
 import time
-import random
-import boto3
-import amazon-paapi
+import urllib.parse
+from flask import Flask
+import telegram
+from bs4 import BeautifulSoup
+import os
 from botocore.exceptions import NoCredentialsError
 from telegram import Bot
-from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 
 # Configurazione Amazon PA-API
