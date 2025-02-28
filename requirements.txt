@@ -6,3 +6,4 @@ python-telegram-bot
 schedule
 boto3
 requests
+python-amazon-paapi
