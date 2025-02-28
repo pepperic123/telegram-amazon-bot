@@ -6,15 +6,16 @@ import time
 import urllib.parse
 from flask import Flask
 import telegram
-from telegram.constants import ParseMode  # Import necessario per ParseMode.MARKDOWN
+from telegram.constants import ParseMode
 from bs4 import BeautifulSoup
 import os
+import asyncio
 
 # --------------------------
 # Configurazione Amazon PA‑API
 # --------------------------
 AWS_ACCESS_KEY = "AKPAV0YTNY1740423739"
-AWS_SECRET_KEY = "g0N1qt9tB2AUB+chkTDjakR3nafgqmkGkfr77/2h"
+AWS_SECRET_KEY = "g0N1qt9tB2AUB+chkTDjakR3nafgqmkGkfr77/2h""
 ASSOCIATE_TAG = "new1707-21"
 
 # --------------------------
@@ -48,14 +49,11 @@ def generate_amazon_signed_url():
     # Ordina i parametri e crea la stringa di query canonica
     sorted_params = sorted(params.items())
     query_string = urllib.parse.urlencode(sorted_params)
-    # Crea la stringa da firmare
     string_to_sign = f"GET\n{endpoint}\n{uri}\n{query_string}"
-    # Firma la stringa con HMAC-SHA256 usando AWS_SECRET_KEY
     signature = hmac.new(AWS_SECRET_KEY.encode('utf-8'),
                          string_to_sign.encode('utf-8'),
                          hashlib.sha256).digest()
     signature = base64.b64encode(signature).decode()
-    # Costruisci l'URL firmato
     signed_url = f"https://{endpoint}{uri}?{query_string}&Signature={urllib.parse.quote(signature)}"
     return signed_url
 
@@ -71,7 +69,7 @@ def get_amazon_offers():
         if not items:
             return "Nessuna offerta trovata."
         offers_text = ""
-        # Estrai i primi 5 prodotti (modifica se necessario)
+        # Estrai i primi 5 prodotti
         for item in items[:5]:
             title_tag = item.find("Title")
             price_tag = item.find("FormattedPrice")
@@ -86,10 +84,14 @@ def get_amazon_offers():
         return f"Errore nella richiesta: {response.status_code}"
 
 # --------------------------
-# Funzione per inviare un messaggio su Telegram
+# Funzione asincrona per inviare messaggi su Telegram
 # --------------------------
+async def async_send_telegram_message(message):
+    await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN)
+
+# Funzione wrapper sincrona
 def send_telegram_message(message):
-    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN)
+    asyncio.run(async_send_telegram_message(message))
 
 # --------------------------
 # Endpoints Flask
