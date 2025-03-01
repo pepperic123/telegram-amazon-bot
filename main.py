@@ -27,7 +27,8 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/browse.html?node=83450031",
     "https://www.amazon.it/gp/browse.html?node=524013031",
     "https://www.amazon.it/gp/bestsellers/"
-    
+]    
+
 SENT_ASINS_FILE = "sent_asins.txt"
 
 # Configurazione Selenium
