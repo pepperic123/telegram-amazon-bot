@@ -4,7 +4,7 @@ import requests
 import schedule
 from python_amazon_paapi import AmazonAPI
 
-# Imposta le tue credenziali
+# Imposta le credenziali dalle variabili d'ambiente
 TELEGRAM_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
 CHAT_ID = "-1001434969904"
 AMAZON_ACCESS_KEY = "AKPAV0YTNY1740423739"
@@ -16,6 +16,8 @@ amazon = AmazonAPI(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_ASSOCIATE_TAG, "
 
 # File per tenere traccia degli ASIN già inviati
 SENT_ASINS_FILE = "sent_asins.txt"
+
+session = requests.Session()
 
 def load_sent_asins():
     if not os.path.exists(SENT_ASINS_FILE):
@@ -36,8 +38,8 @@ def get_product_info(asin):
         product = amazon.get_items(asin)
         if product and product.items:
             item = product.items[0]
-            title = item.item_info.title.display_value if item.item_info.title else "Offerta Amazon"
-            price = item.offers.listings[0].price.display_amount if item.offers else "N/A"
+            title = item.item_info.title.display_value if item.item_info and item.item_info.title else "Offerta Amazon"
+            price = item.offers.listings[0].price.display_amount if item.offers and item.offers.listings else "N/A"
             image = item.images.primary.large.url if item.images and item.images.primary else None
             link = f"https://www.amazon.it/dp/{asin}?tag={AMAZON_ASSOCIATE_TAG}"
             return title, price, image, link
@@ -53,7 +55,7 @@ def send_to_telegram(title, price, image, link):
         "parse_mode": "Markdown",
         "disable_web_page_preview": False
     }
-    requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", data=payload)
+    session.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", data=payload)
     
     if image:
         img_payload = {
@@ -62,7 +64,7 @@ def send_to_telegram(title, price, image, link):
             "caption": message,
             "parse_mode": "Markdown"
         }
-        requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto", data=img_payload)
+        session.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto", data=img_payload)
 
 def send_offers():
     sent_asins = load_sent_asins()
