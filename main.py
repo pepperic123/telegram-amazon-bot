@@ -78,7 +78,7 @@ def get_amazon_offers():
     driver = webdriver.Chrome(options=chrome_options)
     offers = []
     seen_products = set()
-    
+
     for url in AMAZON_URLS:
         print(f"📡 Scraping {url}")
         driver.get(url)
@@ -91,16 +91,17 @@ def get_amazon_offers():
                 link = item.find('a', {'class': 'a-link-normal'})
                 if not link or "/dp/" not in link.get('href'):
                     continue
-                
-                asin = link.get("href").split("/dp/")[1].split("/")[0]
-                if asin in seen_products or asin in sent_asins:
-                    continue  # Salta prodotti già visti o inviati
-                seen_products.add(asin)
-                
+
                 full_url = add_affiliate_tag(f"https://www.amazon.it{link.get('href').split('?')[0]}")
+                asin = link.get("href").split("/dp/")[1].split("/")[0]
+
+                if asin in seen_products or asin in sent_asins:
+                    continue
+                seen_products.add(asin)
+
                 title = extract_title(item)
+
                 offers.append({'title': title, 'link': full_url, 'asin': asin})
-                
                 if len(offers) >= 10:
                     break
             except Exception as e:
