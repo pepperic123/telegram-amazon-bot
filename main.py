@@ -4,16 +4,18 @@ import threading
 import schedule
 import os
 import asyncio
+import re
 import json
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 from telegram import Bot
 from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 
 # Configurazione
-TOKEN = "7213198162:AA..."
+TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
 CHAT_ID = "-1001434969904"
 AMAZON_ASSOCIATE_TAG = "new1707-21"
 AMAZON_URLS = [
@@ -23,8 +25,8 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/most-wished-for/"
 ]
 
+# File per salvare gli ASIN già inviati
 SENT_ASINS_FILE = "sent_asins.txt"
-MAX_ASINS = 200  # Numero massimo di ASIN da salvare
 
 # Configurazione Selenium
 chrome_options = Options()
@@ -45,18 +47,16 @@ user_agents = [
 ]
 chrome_options.add_argument(f"user-agent={random.choice(user_agents)}")
 
-# Caricare ASIN inviati
-sent_asins = set()
+# Caricare ASIN inviati da file
 def load_sent_asins():
-    global sent_asins
     if os.path.exists(SENT_ASINS_FILE):
         with open(SENT_ASINS_FILE, "r") as file:
-            sent_asins = set(file.read().splitlines())
-load_sent_asins()
+            return set(file.read().splitlines())
+    return set()
 
+# Salvare ASIN inviati
+sent_asins = load_sent_asins()
 def save_sent_asins():
-    global sent_asins
-    sent_asins = set(list(sent_asins)[-MAX_ASINS:])  # Mantiene solo gli ultimi 200
     with open(SENT_ASINS_FILE, "w") as file:
         file.write("\n".join(sent_asins))
 
@@ -109,12 +109,11 @@ def get_amazon_offers():
             except Exception as e:
                 print(f"⚠️ Errore: {str(e)}")
                 continue
-    
+
     driver.quit()
     return offers
 
 async def send_telegram(offer):
-    print(f"📤 Tentativo di inviare: {offer['title']} a Telegram...")
     try:
         bot = Bot(token=TOKEN)
         text = (f"🔥 **{offer['title']}**\n\n"
@@ -123,7 +122,7 @@ async def send_telegram(offer):
         await bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="Markdown", disable_web_page_preview=False)
         sent_asins.add(offer['asin'])
         save_sent_asins()
-        print(f"✅ Messaggio inviato: {offer['title']}")
+        print(f"✅ Invio completato: {offer['title'][:30]}...")
     except Exception as e:
         print(f"❌ Errore invio Telegram: {str(e)}")
 
@@ -140,7 +139,7 @@ def job():
         print("⏭️ Nessuna offerta trovata")
 
 def run_scheduler():
-    schedule.every(1).to(5).minutes.do(job)
+    schedule.every(35).to(55).minutes.do(job)
     while True:
         schedule.run_pending()
         time.sleep(60)
