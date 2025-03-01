@@ -16,7 +16,7 @@ from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 
 # Configurazione
-TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
+TOKEN = "nascosto"
 CHAT_ID = "-1002290458283"
 AMAZON_ASSOCIATE_TAG = "new1707-21"
 AMAZON_URLS = [
@@ -186,8 +186,14 @@ def run_scheduler():
         schedule.run_pending()
         time.sleep(60)
 
+# **FLASK SERVER per Render**
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Il bot è attivo!"
+
 if __name__ == "__main__":
     threading.Thread(target=run_scheduler, daemon=True).start()
     job()
-    while True:
-        time.sleep(3600)
+    app.run(host="0.0.0.0", port=10000)  # Porta per Render
