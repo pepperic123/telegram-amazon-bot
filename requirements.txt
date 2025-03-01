@@ -9,3 +9,4 @@ python-telegram-bot
 aws_requests_auth
 apscheduler
 webdriver.Chrome
+webdriver_manager
