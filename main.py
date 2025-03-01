@@ -2,7 +2,7 @@ import os
 import time
 import requests
 import schedule
-from amazon_paapi import AmazonAPI  # Corretto l'import
+from python_amazon_paapi import AmazonAPI  # Corretto l'import
 
 # Imposta le tue credenziali
 TELEGRAM_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
