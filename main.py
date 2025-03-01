@@ -67,4 +67,4 @@ def get_product_info(asin):
             link = f"https://www.amazon.it/dp/{asin}?tag={AMAZON_ASSOCIATE_TAG}"
             return title, price, image, link
     except Exception as e:
-        print(f"Errore nel recupero prodotto {asin
+        print(f"Errore nel recupero prodotto {asin}")
