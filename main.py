@@ -1,27 +1,20 @@
 import os
-import sys
 import time
 import requests
 import schedule
-from python-amazon-paapi import AmazonAPI  # Import corretto
+from python_amazon_paapi import AmazonAPI
 
-# Debug: Verifica l'ambiente di esecuzione
-print("Percorso di Python:", sys.executable)
-print("Percorso di esecuzione:", os.getcwd())
-
-# Imposta le tue credenziali
-TELEGRAM_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
-CHAT_ID = "-1002290458283"
+# Configurazione delle credenziali Amazon
 AMAZON_ACCESS_KEY = "AKPAV0YTNY1740423739"
 AMAZON_SECRET_KEY = "g0N1qt9tB2AUB+chkTDjakR3nafgqmkGkfr77/2h"
-AMAZON_ASSOCIATE_TAG = "new1707-21"
+AMAZON_ASSOCIATE_TAG = "new1707-21"  # Il tuo codice di affiliazione
 
 # Configura l'API di Amazon
-try:
-    amazon = AmazonAPI(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_ASSOCIATE_TAG, "IT")
-    print("API di Amazon configurata correttamente.")
-except Exception as e:
-    print(f"Errore durante la configurazione dell'API di Amazon: {e}")
+amazon = AmazonAPI(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_ASSOCIATE_TAG, "IT")
+
+# Configurazione di Telegram
+TELEGRAM_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
+CHAT_ID = "-1002290458283"
 
 # File per tenere traccia degli ASIN già inviati
 SENT_ASINS_FILE = "sent_asins.txt"
