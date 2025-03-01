@@ -4,18 +4,16 @@ import threading
 import schedule
 import os
 import asyncio
-import re
 import json
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 from telegram import Bot
 from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 
 # Configurazione
-TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
+TOKEN = "7213198162:AA..."
 CHAT_ID = "-1001434969904"
 AMAZON_ASSOCIATE_TAG = "new1707-21"
 AMAZON_URLS = [
@@ -25,8 +23,8 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/most-wished-for/"
 ]
 
-# File per salvare gli ASIN già inviati
 SENT_ASINS_FILE = "sent_asins.txt"
+MAX_ASINS = 200  # Numero massimo di ASIN da salvare
 
 # Configurazione Selenium
 chrome_options = Options()
@@ -36,8 +34,6 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--window-size=1920x1080")
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-chrome_options.add_experimental_option("useAutomationExtension", False)
 
 # User-Agent rotation
 user_agents = [
@@ -47,16 +43,18 @@ user_agents = [
 ]
 chrome_options.add_argument(f"user-agent={random.choice(user_agents)}")
 
-# Caricare ASIN inviati da file
+# Caricare ASIN inviati
+sent_asins = set()
 def load_sent_asins():
+    global sent_asins
     if os.path.exists(SENT_ASINS_FILE):
         with open(SENT_ASINS_FILE, "r") as file:
-            return set(file.read().splitlines())
-    return set()
+            sent_asins = set(file.read().splitlines())
+load_sent_asins()
 
-# Salvare ASIN inviati
-sent_asins = load_sent_asins()
 def save_sent_asins():
+    global sent_asins
+    sent_asins = set(list(sent_asins)[-MAX_ASINS:])  # Mantiene solo gli ultimi 200
     with open(SENT_ASINS_FILE, "w") as file:
         file.write("\n".join(sent_asins))
 
@@ -80,7 +78,7 @@ def get_amazon_offers():
     driver = webdriver.Chrome(options=chrome_options)
     offers = []
     seen_products = set()
-
+    
     for url in AMAZON_URLS:
         print(f"📡 Scraping {url}")
         driver.get(url)
@@ -93,23 +91,22 @@ def get_amazon_offers():
                 link = item.find('a', {'class': 'a-link-normal'})
                 if not link or "/dp/" not in link.get('href'):
                     continue
-
-                full_url = add_affiliate_tag(f"https://www.amazon.it{link.get('href').split('?')[0]}")
+                
                 asin = link.get("href").split("/dp/")[1].split("/")[0]
-
                 if asin in seen_products or asin in sent_asins:
-                    continue
+                    continue  # Salta prodotti già visti o inviati
                 seen_products.add(asin)
-
+                
+                full_url = add_affiliate_tag(f"https://www.amazon.it{link.get('href').split('?')[0]}")
                 title = extract_title(item)
-
                 offers.append({'title': title, 'link': full_url, 'asin': asin})
+                
                 if len(offers) >= 10:
                     break
             except Exception as e:
                 print(f"⚠️ Errore: {str(e)}")
                 continue
-
+    
     driver.quit()
     return offers
 
