@@ -189,11 +189,10 @@ def run_scheduler():
 # **FLASK SERVER per Render**
 app = Flask(__name__)
 
-@app.route('/')
+@app.route("/")
 def home():
     return "Il bot è attivo!"
 
 if __name__ == "__main__":
-    threading.Thread(target=run_scheduler, daemon=True).start()
-    job()
-    app.run(host="0.0.0.0", port=10000)  # Porta per Render
+    port = int(os.environ.get("PORT", 10000))  # Usa la porta assegnata da Render
+    app.run(host="0.0.0.0", port=port)
