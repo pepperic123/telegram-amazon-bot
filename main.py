@@ -1,49 +1,23 @@
 import time
 import random
 import threading
+import schedule
 import os
 import asyncio
+import re
+import json
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
 from telegram import Bot
 from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
-from apscheduler.schedulers.background import BackgroundScheduler
-
-# Installazione Chrome senza root
-os.system("wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb")
-os.system("ar x google-chrome-stable_current_amd64.deb data.tar.xz")
-os.system("tar -xf data.tar.xz --strip-components=4 -C /usr/local/bin ./opt/google/chrome/google-chrome")
-os.system("chmod +x /usr/local/bin/google-chrome")
-os.system("rm -rf data.tar.xz google-chrome-stable_current_amd64.deb")
 
 # Configurazione
-TOKEN = os.getenv("TELEGRAM_TOKEN", "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0")
-CHAT_ID = os.getenv("CHAT_ID", "-1001434969904")
-AMAZON_ASSOCIATE_TAG = os.getenv("AMAZON_ASSOCIATE_TAG", "new1707-21")
-AMAZON_URLS = [
-    "https://www.amazon.it/gp/bestsellers/",
-    "https://www.amazon.it/gp/movers-and-shakers/",
-    "https://www.amazon.it/gp/new-releases/",
-    "https://www.amazon.it/gp/most-wished-for/"
-]
-
-# Configurazione Selenium
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--window-size=1920x1080")
-chrome_options.binary_location = "/usr/local/bin/google-chrome"
-
-# Configurazione
-TOKEN = os.getenv("TELEGRAM_TOKEN", "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0")
-CHAT_ID = os.getenv("CHAT_ID", "-1001434969904")
-AMAZON_ASSOCIATE_TAG = os.getenv("AMAZON_ASSOCIATE_TAG", "new1707-21")
+TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
+CHAT_ID = "-1001434969904"
+AMAZON_ASSOCIATE_TAG = "new1707-21"
 AMAZON_URLS = [
     "https://www.amazon.it/gp/bestsellers/",
     "https://www.amazon.it/gp/movers-and-shakers/",
@@ -64,9 +38,6 @@ chrome_options.add_argument("--window-size=1920x1080")
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
 chrome_options.add_experimental_option("useAutomationExtension", False)
-
-# Specifica il percorso di Chrome
-chrome_options.binary_location = "/usr/bin/google-chrome-stable"
 
 # User-Agent rotation
 user_agents = [
@@ -106,8 +77,7 @@ def extract_title(item):
 
 def get_amazon_offers():
     print("🔍 Avvio scraping...")
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver = webdriver.Chrome(options=chrome_options)
     offers = []
     seen_products = set()
 
@@ -168,12 +138,12 @@ def job():
     else:
         print("⏭️ Nessuna offerta trovata")
 
-# Scheduler con APScheduler
-scheduler = BackgroundScheduler()
-scheduler.add_job(job, 'interval', minutes=random.randint(35, 55))
-scheduler.start()
+def run_scheduler():
+    schedule.every(35).to(55).minutes.do(job)
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
 
-# Flask
 app = Flask(__name__)
 @app.route('/')
 def home():
@@ -184,6 +154,7 @@ def run_flask():
     app.run(host='0.0.0.0', port=port, use_reloader=False)
 
 if __name__ == "__main__":
+    threading.Thread(target=run_scheduler, daemon=True).start()
     threading.Thread(target=run_flask, daemon=True).start()
     job()
     while True:
