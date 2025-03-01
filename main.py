@@ -5,12 +5,9 @@ import schedule
 import os
 import asyncio
 import json
-import base64
-import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 from telegram import Bot
 from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
@@ -30,13 +27,9 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/browse.html?node=83450031",
     "https://www.amazon.it/gp/browse.html?node=524013031",
     "https://www.amazon.it/gp/bestsellers/"
-]
+]    
 
-# Configurazione GitHub
-GITHUB_TOKEN = "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"
-GITHUB_REPO = "pepperic123/telegram-amazon-bot"
-GITHUB_FILE_PATH = "sent_asins.txt"
-GITHUB_API_URL = f"https://api.github.com/repos/pepperic123/telegram-amazon-bot/contents/sent_asins.txt"
+SENT_ASINS_FILE = "sent_asins.txt"
 
 # Configurazione Selenium
 chrome_options = Options()
@@ -57,50 +50,18 @@ user_agents = [
 ]
 chrome_options.add_argument(f"user-agent={random.choice(user_agents)}")
 
-# Caricare ASIN da GitHub
+# Caricare ASIN inviati da file
 def load_sent_asins():
-    try:
-        headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-        response = requests.get(GITHUB_API_URL, headers=headers)
+    if os.path.exists(SENT_ASINS_FILE):
+        with open(SENT_ASINS_FILE, "r") as file:
+            return set(file.read().splitlines())
+    return set()
 
-        if response.status_code == 200:
-            file_data = response.json()
-            content = base64.b64decode(file_data["content"]).decode("utf-8")
-            return set(content.splitlines()), file_data["sha"]
-        else:
-            print("⚠️ Nessun file trovato su GitHub, creandone uno nuovo...")
-            return set(), None
-    except Exception as e:
-        print(f"❌ Errore nel caricamento da GitHub: {e}")
-        return set(), None
+sent_asins = load_sent_asins()
 
-# Salvare ASIN su GitHub
 def save_sent_asins():
-    try:
-        headers = {
-            "Authorization": f"token {GITHUB_TOKEN}",
-            "Content-Type": "application/json"
-        }
-        content = "\n".join(sent_asins)
-        encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
-
-        data = {
-            "message": "Aggiornato sent_asins.txt",
-            "content": encoded_content,
-            "sha": github_file_sha
-        }
-
-        response = requests.put(GITHUB_API_URL, headers=headers, data=json.dumps(data))
-
-        if response.status_code == 200 or response.status_code == 201:
-            print("✅ ASIN aggiornati con successo su GitHub!")
-        else:
-            print(f"❌ Errore aggiornamento GitHub: {response.json()}")
-    except Exception as e:
-        print(f"❌ Errore nel salvataggio su GitHub: {e}")
-
-# Caricare gli ASIN salvati
-sent_asins, github_file_sha = load_sent_asins()
+    with open(SENT_ASINS_FILE, "w") as file:
+        file.write("\n".join(sent_asins))
 
 def add_affiliate_tag(url):
     parsed_url = urlparse(url)
@@ -119,44 +80,48 @@ def extract_title(item):
 
 def get_amazon_offers():
     print("🔍 Avvio scraping...")
-    driver = webdriver.Chrome(options=chrome_options)
-    offers = []
-    seen_products = set()
+    try:
+        driver = webdriver.Chrome(options=chrome_options)
+        offers = []
+        seen_products = set()
 
-    for url in AMAZON_URLS:
-        print(f"📡 Scraping {url}")
-        driver.get(url)
-        time.sleep(random.uniform(3, 6))
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        items = soup.select("div.p13n-sc-uncoverable-faceout")
+        for url in AMAZON_URLS:
+            print(f"📡 Scraping {url}")
+            driver.get(url)
+            time.sleep(random.uniform(3, 6))
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            items = soup.select("div.p13n-sc-uncoverable-faceout")
 
-        for item in items:
-            try:
-                link = item.find('a', {'class': 'a-link-normal'})
-                if not link or "/dp/" not in link.get('href'):
+            for item in items:
+                try:
+                    link = item.find('a', {'class': 'a-link-normal'})
+                    if not link or "/dp/" not in link.get('href'):
+                        continue
+
+                    full_url = add_affiliate_tag(f"https://www.amazon.it{link.get('href').split('?')[0]}")
+                    asin = link.get("href").split("/dp/")[1].split("/")[0]
+
+                    if asin in seen_products or asin in sent_asins:
+                        continue
+                    seen_products.add(asin)
+
+                    title = extract_title(item)
+                    offers.append({'title': title, 'link': full_url, 'asin': asin})
+                    if len(offers) >= 10:
+                        break
+                except Exception as e:
+                    print(f"⚠️ Errore parsing prodotto: {str(e)}")
                     continue
 
-                full_url = add_affiliate_tag(f"https://www.amazon.it{link.get('href').split('?')[0]}")
-                asin = link.get("href").split("/dp/")[1].split("/")[0]
-
-                if asin in seen_products or asin in sent_asins:
-                    continue
-                seen_products.add(asin)
-
-                title = extract_title(item)
-
-                offers.append({'title': title, 'link': full_url, 'asin': asin})
-                if len(offers) >= 10:
-                    break
-            except Exception as e:
-                print(f"⚠️ Errore: {str(e)}")
-                continue
-
-    driver.quit()
-    return offers
+        driver.quit()
+        return offers
+    except Exception as e:
+        print(f"❌ Errore durante lo scraping: {str(e)}")
+        return []
 
 async def send_telegram(offer):
     try:
+        print(f"📤 Tentativo di inviare: {offer['title']} a Telegram...")
         bot = Bot(token=TOKEN)
         text = (f"🔥 **{offer['title']}**\n\n"
                 f"🎉 **Super Offerta!**\n\n"
@@ -164,7 +129,7 @@ async def send_telegram(offer):
         await bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="Markdown", disable_web_page_preview=False)
         sent_asins.add(offer['asin'])
         save_sent_asins()
-        print(f"✅ Invio completato: {offer['title'][:30]}...")
+        print(f"✅ Messaggio inviato: {offer['title'][:30]}...")
     except Exception as e:
         print(f"❌ Errore invio Telegram: {str(e)}")
 
@@ -181,18 +146,23 @@ def job():
         print("⏭️ Nessuna offerta trovata")
 
 def run_scheduler():
-    schedule.every(29).to(55).minutes.do(job)
+    schedule.every(45).to(55).minutes.do(job)
     while True:
         schedule.run_pending()
         time.sleep(60)
 
-# **FLASK SERVER per Render**
 app = Flask(__name__)
-
-@app.route("/")
+@app.route('/')
 def home():
-    return "Il bot è attivo!"
+    return "🤖 Bot attivo"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host='0.0.0.0', port=port, use_reloader=False)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # Usa la porta assegnata da Render
-    app.run(host="0.0.0.0", port=port)
+    threading.Thread(target=run_scheduler, daemon=True).start()
+    threading.Thread(target=run_flask, daemon=True).start()
+    job()
+    while True:
+        time.sleep(3600)
