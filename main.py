@@ -13,6 +13,16 @@ from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 from apscheduler.schedulers.background import BackgroundScheduler
 
+# Installa Chrome e ChromeDriver
+os.system("apt-get update")
+os.system("apt-get install -y wget unzip")
+os.system("wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb")
+os.system("dpkg -i google-chrome-stable_current_amd64.deb || apt-get install -y -f")
+os.system("wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip")
+os.system("unzip chromedriver_linux64.zip")
+os.system("chmod +x chromedriver")
+os.system("mv chromedriver /usr/local/bin/")
+
 # Configurazione
 TOKEN = os.getenv("TELEGRAM_TOKEN", "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0")
 CHAT_ID = os.getenv("CHAT_ID", "-1001434969904")
@@ -37,6 +47,9 @@ chrome_options.add_argument("--window-size=1920x1080")
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")
 chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
 chrome_options.add_experimental_option("useAutomationExtension", False)
+
+# Specifica il percorso di Chrome
+chrome_options.binary_location = "/usr/bin/google-chrome-stable"
 
 # User-Agent rotation
 user_agents = [
