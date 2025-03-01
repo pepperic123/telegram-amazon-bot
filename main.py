@@ -6,7 +6,7 @@ import asyncio
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from telegram import Bot
 from flask import Flask
@@ -76,7 +76,8 @@ def extract_title(item):
 
 def get_amazon_offers():
     print("🔍 Avvio scraping...")
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     offers = []
     seen_products = set()
 
