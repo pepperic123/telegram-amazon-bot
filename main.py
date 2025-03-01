@@ -16,7 +16,7 @@ from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 
 # Configurazione
-TOKEN = "nascosto"
+TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
 CHAT_ID = "-1002290458283"
 AMAZON_ASSOCIATE_TAG = "new1707-21"
 AMAZON_URLS = [
