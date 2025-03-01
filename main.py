@@ -13,15 +13,32 @@ from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 from apscheduler.schedulers.background import BackgroundScheduler
 
-# Installa Chrome e ChromeDriver
-os.system("apt-get update")
-os.system("apt-get install -y wget unzip")
+# Installazione Chrome senza root
 os.system("wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb")
-os.system("dpkg -i google-chrome-stable_current_amd64.deb || apt-get install -y -f")
-os.system("wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip")
-os.system("unzip chromedriver_linux64.zip")
-os.system("chmod +x chromedriver")
-os.system("mv chromedriver /usr/local/bin/")
+os.system("ar x google-chrome-stable_current_amd64.deb data.tar.xz")
+os.system("tar -xf data.tar.xz --strip-components=4 -C /usr/local/bin ./opt/google/chrome/google-chrome")
+os.system("chmod +x /usr/local/bin/google-chrome")
+os.system("rm -rf data.tar.xz google-chrome-stable_current_amd64.deb")
+
+# Configurazione
+TOKEN = os.getenv("TELEGRAM_TOKEN", "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0")
+CHAT_ID = os.getenv("CHAT_ID", "-1001434969904")
+AMAZON_ASSOCIATE_TAG = os.getenv("AMAZON_ASSOCIATE_TAG", "new1707-21")
+AMAZON_URLS = [
+    "https://www.amazon.it/gp/bestsellers/",
+    "https://www.amazon.it/gp/movers-and-shakers/",
+    "https://www.amazon.it/gp/new-releases/",
+    "https://www.amazon.it/gp/most-wished-for/"
+]
+
+# Configurazione Selenium
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--window-size=1920x1080")
+chrome_options.binary_location = "/usr/local/bin/google-chrome"
 
 # Configurazione
 TOKEN = os.getenv("TELEGRAM_TOKEN", "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0")
