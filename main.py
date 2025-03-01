@@ -3,7 +3,7 @@ import sys
 import time
 import requests
 import schedule
-from python_amazon_paapi import AmazonAPI  # Import corretto
+from python-amazon-paapi import AmazonAPI  # Import corretto
 
 # Debug: Verifica l'ambiente di esecuzione
 print("Percorso di Python:", sys.executable)
