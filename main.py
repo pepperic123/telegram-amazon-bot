@@ -17,12 +17,17 @@ TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
 CHAT_ID = "-1002290458283"
 AMAZON_ASSOCIATE_TAG = "new1707-21"
 AMAZON_URLS = [
+    "https://www.amazon.it/gp/goldbox",
     "https://www.amazon.it/gp/bestsellers/",
     "https://www.amazon.it/gp/movers-and-shakers/",
     "https://www.amazon.it/gp/new-releases/",
-    "https://www.amazon.it/gp/most-wished-for/"
-]
-
+    "https://www.amazon.it/gp/most-wished-for/",
+    "https://www.amazon.it/b/?node=77925031/",
+    "https://www.amazon.it/b/?node=12684621031",
+    "https://www.amazon.it/gp/browse.html?node=83450031",
+    "https://www.amazon.it/gp/browse.html?node=524013031",
+    "https://www.amazon.it/gp/bestsellers/"
+    
 SENT_ASINS_FILE = "sent_asins.txt"
 
 # Configurazione Selenium
@@ -140,7 +145,7 @@ def job():
         print("⏭️ Nessuna offerta trovata")
 
 def run_scheduler():
-    schedule.every(35).to(55).minutes.do(job)
+    schedule.every(45).to(55).minutes.do(job)
     while True:
         schedule.run_pending()
         time.sleep(60)
