@@ -1,9 +1,12 @@
 import os
+import sys
 import time
 import requests
-from bs4 import BeautifulSoup
 import schedule
-from python_amazon_paapi import AmazonAPI
+from python_amazon_paapi import AmazonAPI  # Verifica che questo nome sia corretto
+
+# Debug: Stampa il percorso di Python
+print("Percorso di Python:", sys.path)
 
 # Imposta le tue credenziali
 TELEGRAM_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
@@ -13,7 +16,11 @@ AMAZON_SECRET_KEY = "g0N1qt9tB2AUB+chkTDjakR3nafgqmkGkfr77/2hY"
 AMAZON_ASSOCIATE_TAG = "new1707-21"
 
 # Configura l'API di Amazon
-amazon = AmazonAPI(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_ASSOCIATE_TAG, "IT")
+try:
+    amazon = AmazonAPI(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_ASSOCIATE_TAG, "IT")
+    print("API di Amazon configurata correttamente.")
+except Exception as e:
+    print(f"Errore durante la configurazione dell'API di Amazon: {e}")
 
 # File per tenere traccia degli ASIN già inviati
 SENT_ASINS_FILE = "sent_asins.txt"
