@@ -1,4 +1,4 @@
-python-amazon-paapi
+python_amazon_paapi
 requests
 schedule
 flask
@@ -7,4 +7,3 @@ webdriver-manager
 beautifulsoup4
 python-telegram-bot
 aws_requests_auth
-python_amazon_paapi
