@@ -2,7 +2,7 @@ import os
 import time
 import requests
 import schedule
-from amazon.paapi import AmazonAPI
+from amazon_paapi import AmazonAPI  # Corretto l'import
 
 # Imposta le tue credenziali
 TELEGRAM_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
@@ -15,7 +15,6 @@ AMAZON_ASSOCIATE_TAG = "new1707-21"
 amazon = AmazonAPI(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_ASSOCIATE_TAG, "IT")
 
 # Recupera gli ASIN direttamente da Amazon
-# Qui puoi modificare la query per ottenere prodotti specifici
 def get_asins_from_amazon():
     try:
         search_result = amazon.search_items(keywords="offerte", search_index="All", item_count=10)
