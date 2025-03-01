@@ -111,6 +111,7 @@ def get_amazon_offers():
     return offers
 
 async def send_telegram(offer):
+    print(f"📤 Tentativo di inviare: {offer['title']} a Telegram...")
     try:
         bot = Bot(token=TOKEN)
         text = (f"🔥 **{offer['title']}**\n\n"
@@ -119,7 +120,7 @@ async def send_telegram(offer):
         await bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="Markdown", disable_web_page_preview=False)
         sent_asins.add(offer['asin'])
         save_sent_asins()
-        print(f"✅ Invio completato: {offer['title'][:30]}...")
+        print(f"✅ Messaggio inviato: {offer['title']}")
     except Exception as e:
         print(f"❌ Errore invio Telegram: {str(e)}")
 
