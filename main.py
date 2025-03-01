@@ -138,7 +138,7 @@ def job():
         print("⏭️ Nessuna offerta trovata")
 
 def run_scheduler():
-    schedule.every(50).to(60).minutes.do(job)
+    schedule.every(1).to(5).minutes.do(job)
     while True:
         schedule.run_pending()
         time.sleep(60)
