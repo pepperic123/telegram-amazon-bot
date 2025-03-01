@@ -1,4 +1,4 @@
-python_amazon_paapi
+python-amazon-paapi
 requests
 schedule
 beautifulsoup4
