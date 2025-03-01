@@ -1,7 +1,7 @@
 # config.py
 
 TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"  # Inserisci il token del bot Telegram
-CHAT_ID = "-1002290458283"  # Inserisci l'username del tuo canale Telegram (es. "@OfferteAmazon")
+CHAT_ID = "-1001434969904"  # Inserisci l'username del tuo canale Telegram (es. "@OfferteAmazon")
 AWS_ACCESS_KEY = "AKPAV0YTNY1740423739"  # Inserisci la tua Amazon API Access Key
 AWS_SECRET_KEY = "g0N1qt9tB2AUB+chkTDjakR3nafgqmkGkfr77/2h"  # Inserisci la tua Amazon API Secret Key
 AMAZON_ASSOCIATE_TAG = "new1707-21"  # Il tuo tracking ID Amazon
