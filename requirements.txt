@@ -10,4 +10,5 @@ aws_requests_auth
 apscheduler
 webdriver_manager
 gunicorn
-chromium-browser
+apt update
+apt install -y chromium-browser
