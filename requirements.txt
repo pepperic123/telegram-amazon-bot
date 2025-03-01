@@ -7,4 +7,4 @@ webdriver-manager
 beautifulsoup4
 python-telegram-bot
 aws_requests_auth
-
+python_amazon_paapi
