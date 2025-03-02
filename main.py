@@ -4,7 +4,6 @@ import requests
 import asyncio
 import schedule
 import json
-import base64
 import threading
 from bs4 import BeautifulSoup
 from telegram import Bot
@@ -54,15 +53,9 @@ def save_sent_asins():
         "Authorization": f"token {GITHUB_TOKEN}",
         "Content-Type": "application/json"
     }
-    sha_response = requests.get(GITHUB_UPDATE_URL, headers=headers)
-    
-    if sha_response.status_code == 200:
-        sha = sha_response.json().get("sha")
-    else:
-        sha = None
-
-    content = base64.b64encode("\n".join(sent_asins).encode()).decode()
-    data = json.dumps({"message": "Aggiornamento ASIN", "content": content, "sha": sha})
+    sha = requests.get(GITHUB_UPDATE_URL, headers=headers).json().get("sha")
+    content = "\n".join(sent_asins).encode("utf-8").decode("latin-1")
+    data = json.dumps({"message": "Aggiornamento ASIN", "content": content.encode("utf-8").hex(), "sha": sha})
     requests.put(GITHUB_UPDATE_URL, headers=headers, data=data)
 
 def add_affiliate_tag(url):
@@ -141,17 +134,12 @@ def run_scheduler():
         schedule.run_pending()
         time.sleep(60)
 
-# Flask per UptimeRobot
 app = Flask(__name__)
 
 @app.route('/')
 def home():
     return "🤖 Bot attivo e funzionante!"
 
-def run_flask():
-    app.run(host="0.0.0.0", port=8000)
-
 if __name__ == "__main__":
-    threading.Thread(target=run_flask, daemon=True).start()  # Flask in un thread separato
-    job()
-    run_scheduler()
+    threading.Thread(target=run_scheduler, daemon=True).start()  # Avvia il bot in background
+    app.run(host="0.0.0.0", port=8000)  # Flask come servizio principale
