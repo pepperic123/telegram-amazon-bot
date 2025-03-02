@@ -12,8 +12,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from telegram import Bot
-from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+import traceback
 
 # Configurazione
 TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
@@ -72,6 +72,7 @@ def load_sent_asins():
             return set(), None
     except Exception as e:
         print(f"❌ Errore nel caricamento da GitHub: {e}")
+        traceback.print_exc()
         return set(), None
 
 # Salvare ASIN su GitHub
@@ -98,6 +99,7 @@ def save_sent_asins():
             print(f"❌ Errore aggiornamento GitHub: {response.json()}")
     except Exception as e:
         print(f"❌ Errore nel salvataggio su GitHub: {e}")
+        traceback.print_exc()
 
 # Caricare gli ASIN salvati
 sent_asins, github_file_sha = load_sent_asins()
@@ -150,6 +152,7 @@ def get_amazon_offers():
                     break
             except Exception as e:
                 print(f"⚠️ Errore: {str(e)}")
+                traceback.print_exc()
                 continue
 
     driver.quit()
@@ -167,32 +170,39 @@ async def send_telegram(offer):
         print(f"✅ Invio completato: {offer['title'][:30]}...")
     except Exception as e:
         print(f"❌ Errore invio Telegram: {str(e)}")
+        traceback.print_exc()
 
 def job():
     print("⚡ Avvio nuovo scan")
     offers = get_amazon_offers()
+    print(f"🔍 Offerte trovate: {len(offers)}")
     if offers:
         random.shuffle(offers)
         for offer in offers:
             if offer['asin'] not in sent_asins:
-                asyncio.run(send_telegram(offer))
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(send_telegram(offer))
+                loop.close()
                 break
     else:
         print("⏭️ Nessuna offerta trovata")
 
 def run_scheduler():
-    schedule.every(25).to(55).minutes.do(job)
+    print("⏰ Scheduler avviato")
+    schedule.every(45).to(55).minutes.do(job)
     while True:
         schedule.run_pending()
         time.sleep(60)
 
-# **FLASK SERVER per Render**
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "Il bot è attivo!"
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # Usa la porta assegnata da Render
-    app.run(host="0.0.0.0", port=port)
+    # Avvia lo scheduler in un thread separato
+    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+    scheduler_thread.start()
+
+    # Esegui il job immediatamente
+    job()
+
+    # Mantieni il programma in esecuzione
+    while True:
+        time.sleep(3600)
