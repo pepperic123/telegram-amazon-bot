@@ -22,7 +22,6 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/bestsellers/",
     "https://www.amazon.it/gp/movers-and-shakers/",
     "https://www.amazon.it/gp/new-releases/",
-    "https://www.amazon.it/gp/most-wished-for/“,
     "https://www.amazon.it/b/?node=77925031/",
     "https://www.amazon.it/b/?node=12684621031",
     "https://www.amazon.it/gp/browse.html?node=83450031",
