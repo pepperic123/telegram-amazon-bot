@@ -190,7 +190,7 @@ def job():
 
 def run_scheduler():
     print("⏰ Scheduler avviato")
-    schedule.every(45).to(55).minutes.do(job)
+    schedule.every(29).to(55).minutes.do(job)
     while True:
         schedule.run_pending()
         time.sleep(60)
