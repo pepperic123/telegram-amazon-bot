@@ -1,17 +1,11 @@
 import time
 import random
-import threading
-import schedule
-import os
+import requests
 import asyncio
-import re
+import schedule
 import json
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 from telegram import Bot
-from flask import Flask
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 
 # Configurazione
@@ -26,43 +20,41 @@ AMAZON_URLS = [
     "https://www.amazon.it/b/?node=12684621031",
     "https://www.amazon.it/gp/browse.html?node=83450031",
     "https://www.amazon.it/gp/browse.html?node=524013031"
-    
 ]
 
-# File per salvare gli ASIN già inviati
-SENT_ASINS_FILE = "sent_asins.txt"
-
-# Configurazione Selenium
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--window-size=1920x1080")
-chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-chrome_options.add_experimental_option("useAutomationExtension", False)
-
 # User-Agent rotation
-user_agents = [
+USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0"
 ]
-chrome_options.add_argument(f"user-agent={random.choice(user_agents)}")
 
-# Caricare ASIN inviati da file
+# URL file su GitHub per gestire gli ASIN inviati
+GITHUB_REPO = "https://raw.githubusercontent.com/pepperic123/telegram-amazon-bot/main/sent_asins.txt"
+GITHUB_UPDATE_URL = "https://api.github.com/repos/pepperic123/telegram-amazon-bot/contents/sent_asins.txt"
+GITHUB_TOKEN = "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"
+
+# Caricare ASIN inviati da GitHub
 def load_sent_asins():
-    if os.path.exists(SENT_ASINS_FILE):
-        with open(SENT_ASINS_FILE, "r") as file:
-            return set(file.read().splitlines())
+    try:
+        response = requests.get(GITHUB_REPO, timeout=5)
+        if response.status_code == 200:
+            return set(response.text.splitlines())
+    except requests.RequestException:
+        pass
     return set()
 
-# Salvare ASIN inviati
 sent_asins = load_sent_asins()
+
 def save_sent_asins():
-    with open(SENT_ASINS_FILE, "w") as file:
-        file.write("\n".join(sent_asins))
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    sha = requests.get(GITHUB_UPDATE_URL, headers=headers).json().get("sha")
+    content = "\n".join(sent_asins).encode("utf-8").decode("latin-1")
+    data = json.dumps({"message": "Aggiornamento ASIN", "content": content.encode("utf-8").hex(), "sha": sha})
+    requests.put(GITHUB_UPDATE_URL, headers=headers, data=data)
 
 def add_affiliate_tag(url):
     parsed_url = urlparse(url)
@@ -72,57 +64,49 @@ def add_affiliate_tag(url):
     return urlunparse(parsed_url._replace(query=new_query))
 
 def extract_title(item):
-    selectors = ['span.a-size-base-plus', 'h2.a-size-mini', 'span.a-text-normal']
-    for selector in selectors:
-        title_element = item.select_one(selector)
-        if title_element and title_element.get_text(strip=True):
-            return title_element.get_text(strip=True)
-    return "LE MIGLIORI OFFERTE DEL WEB"
+    title_element = item.select_one("span.a-size-base-plus, h2.a-size-mini, span.a-text-normal")
+    return title_element.get_text(strip=True) if title_element else "LE MIGLIORI OFFERTE DEL WEB"
 
 def get_amazon_offers():
     print("🔍 Avvio scraping...")
-    driver = webdriver.Chrome(options=chrome_options)
     offers = []
     seen_products = set()
+    headers = {"User-Agent": random.choice(USER_AGENTS)}
 
     for url in AMAZON_URLS:
         print(f"📡 Scraping {url}")
-        driver.get(url)
-        time.sleep(random.uniform(3, 6))
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        items = soup.select("div.p13n-sc-uncoverable-faceout")
+        try:
+            response = requests.get(url, headers=headers, timeout=5)
+            if response.status_code != 200:
+                continue
+            soup = BeautifulSoup(response.text, 'html.parser')
+            items = soup.select("div.p13n-sc-uncoverable-faceout")
 
-        for item in items:
-            try:
+            for item in items:
                 link = item.find('a', {'class': 'a-link-normal'})
                 if not link or "/dp/" not in link.get('href'):
                     continue
-
-                full_url = add_affiliate_tag(f"https://www.amazon.it{link.get('href').split('?')[0]}")
+                
                 asin = link.get("href").split("/dp/")[1].split("/")[0]
-
                 if asin in seen_products or asin in sent_asins:
                     continue
+                
                 seen_products.add(asin)
-
+                full_url = add_affiliate_tag(f"https://www.amazon.it{link.get('href').split('?')[0]}")
                 title = extract_title(item)
-
                 offers.append({'title': title, 'link': full_url, 'asin': asin})
+                
                 if len(offers) >= 10:
                     break
-            except Exception as e:
-                print(f"⚠️ Errore: {str(e)}")
-                continue
-
-    driver.quit()
+        except requests.RequestException:
+            continue
+    
     return offers
 
 async def send_telegram(offer):
     try:
         bot = Bot(token=TOKEN)
-        text = (f"🔥 **{offer['title']}**\n\n"
-                f"🎉 **Super Offerta!**\n\n"
-                f"🔗 [Acquista ora]({offer['link']})")
+        text = f"🔥 **{offer['title']}**\n\n🎉 **Super Offerta!**\n\n🔗 [Acquista ora]({offer['link']})"
         await bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="Markdown", disable_web_page_preview=False)
         sent_asins.add(offer['asin'])
         save_sent_asins()
@@ -148,18 +132,6 @@ def run_scheduler():
         schedule.run_pending()
         time.sleep(60)
 
-app = Flask(__name__)
-@app.route('/')
-def home():
-    return "🤖 Bot attivo"
-
-def run_flask():
-    port = int(os.environ.get("PORT", 8000))
-    app.run(host='0.0.0.0', port=port, use_reloader=False)
-
 if __name__ == "__main__":
-    threading.Thread(target=run_scheduler, daemon=True).start()
-    threading.Thread(target=run_flask, daemon=True).start()
     job()
-    while True:
-        time.sleep(3600)
+    run_scheduler()
