@@ -141,5 +141,10 @@ def home():
     return "🤖 Bot attivo e funzionante!"
 
 if __name__ == "__main__":
+    print("🚀 Avvio del bot e del web server...")
     threading.Thread(target=run_scheduler, daemon=True).start()  # Avvia il bot in background
+
+    # FORZA L'ESECUZIONE IMMEDIATA
+    job()
+
     app.run(host="0.0.0.0", port=8000)  # Flask come servizio principale
