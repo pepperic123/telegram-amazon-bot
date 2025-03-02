@@ -10,4 +10,4 @@ aws_requests_auth
 apscheduler
 webdriver_manager
 gunicorn
-
+urllib3
