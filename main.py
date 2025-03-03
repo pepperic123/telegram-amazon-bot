@@ -110,7 +110,7 @@ async def send_telegram(offer):
     try:
         bot = Bot(token=TOKEN)
         text = (f"🔥 **{offer['title']}**\n\n🎉 **Super Offerta!**\n\n"
-                f"🔗 [Apri nell'app Amazon]({offer['deep_link']})\n"
+                f"🔗 [Apri nell'app Amazon]({offer['app_link']})\n"
                 f"🔗 [Apri nel browser]({offer['link']})")
         await bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="Markdown", disable_web_page_preview=False)
         sent_asins.add(offer['asin'])
