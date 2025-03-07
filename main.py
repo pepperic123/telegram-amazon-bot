@@ -15,6 +15,20 @@ TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
 CHAT_ID = "-1002290458283"
 AMAZON_ASSOCIATE_TAG = "new1707-21"
 AMAZON_URLS = [
+    "https://www.amazon.it/gp/most-gifted/",  # I più regalati
+    "https://www.amazon.it/gp/most-wished-for/",  # I più desiderati
+    "https://www.amazon.it/gp/bestsellers/appliances/",  # Bestseller in Elettrodomestici
+    "https://www.amazon.it/gp/bestsellers/baby/",  # Bestseller in Prima infanzia
+    "https://www.amazon.it/gp/bestsellers/books/",  # Bestseller in Libri
+    "https://www.amazon.it/gp/bestsellers/diy/",  # Bestseller in Fai da te
+    "https://www.amazon.it/gp/bestsellers/kitchen/",  # Bestseller in Cucina e accessori
+    "https://www.amazon.it/gp/bestsellers/luggage/",  # Bestseller in Valigeria
+    "https://www.amazon.it/gp/bestsellers/music/",  # Bestseller in CD e Vinili
+    "https://www.amazon.it/gp/bestsellers/pets/",  # Bestseller in Prodotti per animali domestici
+    "https://www.amazon.it/gp/bestsellers/shoes/",  # Bestseller in Scarpe e borse
+    "https://www.amazon.it/gp/bestsellers/watches/",  # Bestseller in Orologi
+    "https://www.amazon.it/gp/holiday-deals/",  # Offerte speciali per festività e Black Friday
+    "https://www.amazon.it/gp/warehouse-deals/",  # Offerte Amazon Warehouse (prodotti usati e ricondizionati)
     "https://www.amazon.it/gp/deals/",  # Offerte generali
     "https://www.amazon.it/gp/bestsellers/electronics/",  # Bestseller in Elettronica
     "https://www.amazon.it/gp/bestsellers/computers/",  # Bestseller in Informatica
