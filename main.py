@@ -15,6 +15,17 @@ TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
 CHAT_ID = "-1002290458283"
 AMAZON_ASSOCIATE_TAG = "new1707-21"
 AMAZON_URLS = [
+    "https://www.amazon.it/gp/deals/",  # Offerte generali
+    "https://www.amazon.it/gp/bestsellers/electronics/",  # Bestseller in Elettronica
+    "https://www.amazon.it/gp/bestsellers/computers/",  # Bestseller in Informatica
+    "https://www.amazon.it/gp/bestsellers/home/",  # Bestseller in Casa e Cucina
+    "https://www.amazon.it/gp/bestsellers/sports/",  # Bestseller in Sport e Tempo Libero
+    "https://www.amazon.it/gp/bestsellers/fashion/",  # Bestseller in Abbigliamento e Moda
+    "https://www.amazon.it/gp/bestsellers/toys/",  # Bestseller in Giochi e Giocattoli
+    "https://www.amazon.it/gp/bestsellers/videogames/",  # Bestseller in Videogiochi
+    "https://www.amazon.it/gp/bestsellers/beauty/",  # Bestseller in Bellezza e Cura della Persona
+    "https://www.amazon.it/gp/bestsellers/automotive/",  # Bestseller in Auto e Moto
+    "https://www.amazon.it/gp/bestsellers/grocery/",  # Bestseller in Alimentari e Cura della Casa
     "https://www.amazon.it/gp/bestsellers/",
     "https://www.amazon.it/gp/movers-and-shakers/",
     "https://www.amazon.it/gp/new-releases/",
