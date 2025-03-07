@@ -20,19 +20,15 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/bestsellers/appliances/",  # Bestseller in Elettrodomestici
     "https://www.amazon.it/gp/bestsellers/baby/",  # Bestseller in Prima infanzia
     "https://www.amazon.it/gp/bestsellers/books/",  # Bestseller in Libri
-    "https://www.amazon.it/gp/bestsellers/diy/",  # Bestseller in Fai da te
     "https://www.amazon.it/gp/bestsellers/kitchen/",  # Bestseller in Cucina e accessori
-    "https://www.amazon.it/gp/bestsellers/luggage/",  # Bestseller in Valigeria
     "https://www.amazon.it/gp/bestsellers/music/",  # Bestseller in CD e Vinili
-    "https://www.amazon.it/gp/bestsellers/pets/",  # Bestseller in Prodotti per animali domestici
-    "https://www.amazon.it/gp/bestsellers/shoes/",  # Bestseller in Scarpe e borse
-    "https://www.amazon.it/gp/bestsellers/watches/",  # Bestseller in Orologi
-    "https://www.amazon.it/gp/holiday-deals/",  # Offerte speciali per festività e Black Friday
-    "https://www.amazon.it/gp/warehouse-deals/",  # Offerte Amazon Warehouse (prodotti usati e ricondizionati)
-    "https://www.amazon.it/gp/deals/",  # Offerte generali
+    "https://www.amazon.it/gp/bestsellers/pet-supplies/ref=zg_bs_nav_pet-supplies_0/",  # Bestseller in Prodotti per animali domestici
+    "https://www.amazon.it/gp/bestsellers/pc/460127031/ref=zg_bs_nav_pc_1/",  # Bestseller in Scarpe e borse
+    "https://www.amazon.it/gp/bestsellers/music/489829031/ref=zg_bs_nav_music_1/",  # Bestseller in Orologi
+    "https://www.amazon.it/gp/bestsellers/amazon-renewed/ref=zg_bs_nav_amazon-renewed_0/",  # Offerte Amazon Warehouse (prodotti usati e ricondizionati)
     "https://www.amazon.it/gp/bestsellers/electronics/",  # Bestseller in Elettronica
-    "https://www.amazon.it/gp/bestsellers/computers/",  # Bestseller in Informatica
-    "https://www.amazon.it/gp/bestsellers/home/",  # Bestseller in Casa e Cucina
+    "https://www.amazon.it/gp/bestsellers/digital-text/ref=zg_bs_nav_digital-text_0/",  # Bestseller in Informatica
+    "https://www.amazon.it/stores/page/BCAD3D5E-5EC9-4CAA-B36F-34A6444EA8C7?ingress=3&visitId=63200429-8352-4341-9d94-511dde08d602&ref_=nav_cs_amazonbasics/",  # Bestseller in Casa e Cucina
     "https://www.amazon.it/gp/bestsellers/sports/",  # Bestseller in Sport e Tempo Libero
     "https://www.amazon.it/gp/bestsellers/fashion/",  # Bestseller in Abbigliamento e Moda
     "https://www.amazon.it/gp/bestsellers/toys/",  # Bestseller in Giochi e Giocattoli
@@ -42,10 +38,11 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/bestsellers/grocery/",  # Bestseller in Alimentari e Cura della Casa
     "https://www.amazon.it/gp/movers-and-shakers/",
     "https://www.amazon.it/gp/new-releases/",
-    "https://www.amazon.it/b/?node=77925031/",
-    "https://www.amazon.it/b/?node=12684621031",
-    "https://www.amazon.it/gp/browse.html?node=83450031",
-    "https://www.amazon.it/gp/browse.html?node=524013031"
+    "https://www.amazon.it/gp/new-releases/fashion/12710833031/ref=zg_bsnr_nav_fashion_1/",
+    "https://www.amazon.it/gp/new-releases/musical-instruments/5021804031/ref=zg_bsnr_nav_musical-instruments_1/",
+    "https://www.amazon.it/Ciclismo/b/?ie=UTF8&node=968067031&ref_=sv_sg_9/",
+    "https://www.amazon.it/gp/browse.html?node=524013031/",
+    "https://www.amazon.it/fanshop/italianfootball/fc-inter/?_encoding=UTF8&ref_=slls_fs_sf_sm_olympics&pd_rd_w=w7zSJ&content-id=amzn1.sym.7692d8b9-66a0-4d81-881f-f2013b84f5f7&pf_rd_p=7692d8b9-66a0-4d81-881f-f2013b84f5f7&pf_rd_r=SS73ACNHV64RJDSNAENV&pd_rd_wg=oIPny&pd_rd_r=a27fce2a-de74-45a5-b7d6-62fc8947e261/"
 ]
 
 # User-Agent rotation
