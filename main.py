@@ -40,7 +40,6 @@ AMAZON_URLS = [
     "https://www.amazon.it/gp/bestsellers/beauty/",  # Bestseller in Bellezza e Cura della Persona
     "https://www.amazon.it/gp/bestsellers/automotive/",  # Bestseller in Auto e Moto
     "https://www.amazon.it/gp/bestsellers/grocery/",  # Bestseller in Alimentari e Cura della Casa
-    "https://www.amazon.it/gp/bestsellers/",
     "https://www.amazon.it/gp/movers-and-shakers/",
     "https://www.amazon.it/gp/new-releases/",
     "https://www.amazon.it/b/?node=77925031/",
