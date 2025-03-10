@@ -1,4 +1,4 @@
-from amazon_paapi import AmazonAPI
+from amazon_paapi import AmazonPaapi
 from config import (
     AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY,
     AMAZON_PARTNER_TAG, AMAZON_HOST, AMAZON_RESOURCES
@@ -7,8 +7,8 @@ from config import (
 class AmazonApiWrapper:
     def __init__(self):
         try:
-            # Configura AmazonAPI
-            self.api = AmazonAPI(
+            # Configura AmazonPaapi
+            self.api = AmazonPaapi(
                 AMAZON_ACCESS_KEY,
                 AMAZON_SECRET_KEY,
                 AMAZON_PARTNER_TAG,
@@ -44,6 +44,10 @@ class AmazonApiWrapper:
                     }
                     offers.append(offer)
             return offers
+
+        except Exception as e:
+            print(f"❌ Errore durante la richiesta: {str(e)}")
+            return []
 
         except Exception as e:
             print(f"❌ Errore durante la richiesta: {str(e)}")
