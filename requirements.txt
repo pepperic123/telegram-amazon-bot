@@ -1,10 +1,7 @@
-requests
 python-telegram-bot
 schedule
 flask
 boto3
-python-amazon-paapi
+python-amazon-paapi==5.0.1
 telegram
 python-amazon-simple-product-api
-python-amazon-paapi==5.0.1
-
