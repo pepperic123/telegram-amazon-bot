@@ -1,4 +1,4 @@
-from amazon_paapi import AmazonPaapi
+from amazon_paapi import AmazonAPI
 from config import (
     AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY,
     AMAZON_PARTNER_TAG, AMAZON_HOST, AMAZON_RESOURCES
