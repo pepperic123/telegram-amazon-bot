@@ -1,14 +1,51 @@
-# config.py
+# Credenziali Amazon
+AMAZON_ACCESS_KEY = "AKPAV0YTNY1740423739"
+AMAZON_SECRET_KEY = "g0N1qt9tB2AUB+chkTDjakR3nafgqmkGkfr77/2h"
+AMAZON_PARTNER_TAG = "new1707-21"
+AMAZON_HOST = "webservices.amazon.it"  # Endpoint per l'Italia
+AMAZON_RESOURCES = [
+    "ItemInfo.Title",
+    "Offers.Listings.Price",
+    "Images.Primary.Large"
+]
 
-TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"  # Inserisci il token del bot Telegram
-CHAT_ID = "-1002290458283"  # Inserisci l'username del tuo canale Telegram (es. "@OfferteAmazon")
-AWS_ACCESS_KEY = "AKPAV0YTNY1740423739"  # Inserisci la tua Amazon API Access Key
-AWS_SECRET_KEY = "g0N1qt9tB2AUB+chkTDjakR3nafgqmkGkfr77/2h"  # Inserisci la tua Amazon API Secret Key
-AMAZON_ASSOCIATE_TAG = "new1707-21"  # Il tuo tracking ID Amazon
-RAPIDAPI_KEY = "285c06ed85msh34004e8e5e52f0fp1b24d1jsnc07ccd8b5443"
-SCRAPERAPI_KEY = "73addc3cbaf02af137ac90f13d6f091f"
-RAPIDAPI_HOST = "amazon-product-advertising-api.p.rapidapi.com"
-# URL endpoint fornito da RapidAPI per il Product Advertising API
-RAPIDAPI_URL = "https://amazon-product-advertising-api.p.rapidapi.com/paapi5/searchitems"
-TELEGRAM_BOT_TOKEN = "7213198162:AAHY9VfC-13x469C6psn3V36L1PGjCQxSs0"
-TELEGRAM_CHAT_ID = "-1002290458283"
+AMAZON_COUNTRY = "IT"  # Codice paese (es: "IT" per Italia)
+
+# Credenziali Telegram
+TELEGRAM_TOKEN = "7193847897:AAE7ny5YWjmPyrxIcgeCjvsy8koYM8jQ7pw"  # Token del bot Telegram
+TELEGRAM_CHAT_ID = "-1001434969904"  # ID del chat o canale Telegram
+
+# Credenziali GitHub (per memorizzare gli ASIN inviati)
+GITHUB_REPO_URL = "https://raw.githubusercontent.com/pepperic123/telegram-amazon-bot/main/sent_asins.txt"  # URL del file su GitHub
+GITHUB_UPDATE_URL = "https://api.github.com/repos/pepperic123/telegram-amazon-bot/contents/sent_asins.txt"  # URL API per aggiornare il file
+GITHUB_TOKEN = ""  # Token Gi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tHub (revocalo se esposto)
+# Categorie Amazon per la ricerca
+AMAZON_CATEGORIES = [
+    "Appliances",        # Elettrodomestici
+    "ArtsAndCrafts",     # Arti e Mestieri
+    "Automotive",        # Automotive
+    "Baby",              # Bambini
+    "Beauty",            # Bellezza
+    "Books",             # Libri
+    "Clothing",          # Abbigliamento
+    "Electronics",       # Elettronica
+    "Grocery",           # Alimentari
+    "Health",            # Salute
+    "Home",              # Casa
+    "Industrial",        # Industria
+    "Jewelry",           # Gioielleria
+    "KindleStore",       # Kindle Store
+    "Kitchen",           # Cucina
+    "Luggage",           # Valigie
+    "Music",             # Musica
+    "OfficeProducts",    # Prodotti per ufficio
+    "PersonalCare",      # Cura personale
+    "Shoes",             # Scarpe
+    "Software",          # Software
+    "Sports",            # Sport
+    "Tools",             # Attrezzi
+    "Toys",              # Giochi
+    "VideoGames",        # Videogiochi
+    "Watches",           # Orologi
+    "Women",             # Donne
+    ]
